@@ -32,6 +32,7 @@ var util = {
     hooks: [],
     meta: {},
     notificationsEnabled: true, // Toggle for notifications
+    bufferEnabled: true, // Toggle for buffer in sizing
     notify: function (msg, type) {
         if (util.notificationsEnabled) {
             OBR.notification.show(msg, type);
@@ -580,6 +581,14 @@ var util = {
             <label style="margin-top:8px;display:inline-block;">
                 <input type="checkbox" id="fit_to_object" ${util.meta?.fit_to_object ? "checked" : ""}/> Fit to Object
             </label>
+            <br>
+            <label style="margin-top:8px;display:inline-block;">
+                <input type="checkbox" id="show_notifications" ${util.notificationsEnabled ? "checked" : ""}/> Show Notifications
+            </label>
+            <br>
+            <label style="margin-top:8px;display:inline-block;">
+                <input type="checkbox" id="enable_buffer" ${util.bufferEnabled ? "checked" : ""}/> Enable Buffer for Sizing
+            </label>
             <hr>
         </div>`)
         $(document).on("change", "#screen_control select#selector", async function (evt) {
@@ -677,6 +686,15 @@ var util = {
         });
 
 
+        // Add event listener for Show Notifications checkbox
+        $(document).on("change", "#show_notifications", function () {
+            util.notificationsEnabled = $(this).is(":checked");
+        });
+        // Add event listener for Enable Buffer for Sizing checkbox
+        $(document).on("change", "#enable_buffer", function () {
+            util.bufferEnabled = $(this).is(":checked");
+        });
+
         async function saveSizes() {
             let ttt = $("input.screen_size")
             let new_sizes = {}
@@ -727,7 +745,7 @@ var util = {
                     let height = (selectionBounds.max.y - selectionBounds.min.y) / dpi;
                     let minWidth = util.meta?.screen_size?.width || 0;
                     let minHeight = util.meta?.screen_size?.height || 0;
-                    let buffer = 2; // buffer in grid units
+                    let buffer = util.bufferEnabled ? 2 : 0; // buffer in grid units
                     let centerX = (selectionBounds.max.x + selectionBounds.min.x) / 2;
                     let centerY = (selectionBounds.max.y + selectionBounds.min.y) / 2;
                     let halfW = (width * dpi) / 2;
@@ -857,7 +875,7 @@ var util = {
                             var min_height = (_h * dpi);
                             var curr_width = new_selection_bounds.max.x - new_selection_bounds.min.x;
                             var curr_height = new_selection_bounds.max.y - new_selection_bounds.min.y;
-                            var buffer = 2; // buffer in grid units
+                            var buffer = util.bufferEnabled ? 2 : 0; // buffer in grid units
                             var centerX = (new_selection_bounds.max.x + new_selection_bounds.min.x) / 2;
                             var centerY = (new_selection_bounds.max.y + new_selection_bounds.min.y) / 2;
                             var halfW = curr_width / 2;
@@ -1061,7 +1079,7 @@ var util = {
                             var min_height = (_h * dpi);
                             var curr_width = new_selection_bounds.max.x - new_selection_bounds.min.x;
                             var curr_height = new_selection_bounds.max.y - new_selection_bounds.min.y;
-                            var buffer = 2; // buffer in grid units
+                            var buffer = util.bufferEnabled ? 2 : 0; // buffer in grid units
                             var centerX = (new_selection_bounds.max.x + new_selection_bounds.min.x) / 2;
                             var centerY = (new_selection_bounds.max.y + new_selection_bounds.min.y) / 2;
                             var halfW = curr_width / 2;
@@ -1266,7 +1284,7 @@ var util = {
             var min_height = (_h * dpi);
             var curr_width = new_selection_bounds.max.x - new_selection_bounds.min.x;
             var curr_height = new_selection_bounds.max.y - new_selection_bounds.min.y;
-            var buffer = 2; // buffer in grid units
+            var buffer = util.bufferEnabled ? 2 : 0; // buffer in grid units
             var centerX = (new_selection_bounds.max.x + new_selection_bounds.min.x) / 2;
             var centerY = (new_selection_bounds.max.y + new_selection_bounds.min.y) / 2;
             var halfW, halfH;
