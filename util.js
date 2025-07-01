@@ -709,7 +709,7 @@ var util = {
                 if (!util.meta.screen_follow) {
                     await util.setRoomMeta({ screen_follow: true, screen_el: { ...screenEl, player_moved: false, force_update: true } });
                     await util.checkFollow();
-                    await util.updateCurrSelectedScreenEl();
+                    await util.updateCurrSelectedScreenEl(); // <-- call here, in the middle
                     await OBR.notification.show("Moving screen to view (one-time update)", "SUCCESS");
                     setTimeout(async () => {
                         await util.setRoomMeta({ screen_follow: false, screen_el: { ...screenEl, player_moved: true, force_update: false } });
@@ -847,7 +847,7 @@ var util = {
                 if (!util.meta.screen_follow) {
                     await util.setRoomMeta({ screen_follow: true, screen_el: { ...screenEl, player_moved: false, force_update: true } });
                     await util.checkFollow();
-                    await util.updateCurrSelectedScreenEl();
+                    await util.updateCurrSelectedScreenEl(); // <-- call here, in the middle
                     await OBR.notification.show("Moving screen to view (one-time update)", "SUCCESS");
                     setTimeout(async () => {
                         await util.setRoomMeta({ screen_follow: false, screen_el: { ...screenEl, player_moved: true, force_update: false } });
