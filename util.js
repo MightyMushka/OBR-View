@@ -705,22 +705,15 @@ var util = {
                 } else {
                     delete screenEl.selectionBounds;
                 }
-                // If Not Following, temporarily enable follow, update, then disable
+                // If Not Following, mimic manual toggle: enable follow, call checkFollow, update, wait, disable follow, call checkFollow
                 if (!util.meta.screen_follow) {
-                    await util.setRoomMeta({ sync2view_in_progress: true });
-                    // Step 1: Enable follow and update screen_el with force_update
                     await util.setRoomMeta({ screen_follow: true, screen_el: { ...screenEl, player_moved: false, force_update: true } });
-                    // Force a metadata update to trigger player updatePos
+                    await util.checkFollow();
                     await util.updateCurrSelectedScreenEl();
                     await OBR.notification.show("Moving screen to view (one-time update)", "SUCCESS");
-                    // Step 2: Wait for a short period to allow player to process the move
                     setTimeout(async () => {
-                        // Step 3: Disable follow and set player_moved: true, clear sync2view_in_progress
-                        await util.setRoomMeta({
-                            screen_follow: false,
-                            screen_el: { ...screenEl, player_moved: true, force_update: false },
-                            sync2view_in_progress: false
-                        });
+                        await util.setRoomMeta({ screen_follow: false, screen_el: { ...screenEl, player_moved: true, force_update: false } });
+                        await util.checkFollow();
                         await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
                     }, 400);
                 } else {
@@ -850,22 +843,15 @@ var util = {
                 } else {
                     delete screenEl.selectionBounds;
                 }
-                // If Not Following, temporarily enable follow, update, then disable
+                // If Not Following, mimic manual toggle: enable follow, call checkFollow, update, wait, disable follow, call checkFollow
                 if (!util.meta.screen_follow) {
-                    await util.setRoomMeta({ sync2view_in_progress: true });
-                    // Step 1: Enable follow and update screen_el with force_update
                     await util.setRoomMeta({ screen_follow: true, screen_el: { ...screenEl, player_moved: false, force_update: true } });
-                    // Force a metadata update to trigger player updatePos
+                    await util.checkFollow();
                     await util.updateCurrSelectedScreenEl();
                     await OBR.notification.show("Moving screen to view (one-time update)", "SUCCESS");
-                    // Step 2: Wait for a short period to allow player to process the move
                     setTimeout(async () => {
-                        // Step 3: Disable follow and set player_moved: true, clear sync2view_in_progress
-                        await util.setRoomMeta({
-                            screen_follow: false,
-                            screen_el: { ...screenEl, player_moved: true, force_update: false },
-                            sync2view_in_progress: false
-                        });
+                        await util.setRoomMeta({ screen_follow: false, screen_el: { ...screenEl, player_moved: true, force_update: false } });
+                        await util.checkFollow();
                         await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
                     }, 400);
                 } else {
