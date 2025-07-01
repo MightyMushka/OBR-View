@@ -456,7 +456,7 @@ var util = {
 
             await util.updatePlayerlist()
           
-            await OBR.notification.show("Screen user successfully added. Updates will now be exclusive to this player.", "SUCCESS")
+            util.notify("Screen user successfully added. Updates will now be exclusive to this player.", "SUCCESS")
         })
     },
     setupScreenControl: async function () {
@@ -472,10 +472,10 @@ var util = {
                             sel_bounds = await OBR.scene.items.getItemBounds(util.meta.screen_el.items.arrayOfProp("id"));
                         }
                         if (!sel_bounds) {
-                            await OBR.notification.show("[Sync2View] No selection bounds to move to.", "ERROR");
+                            util.notify("[Sync2View] No selection bounds to move to.", "ERROR");
                         } else {
                             await OBR.viewport.animateToBounds(sel_bounds);
-                            await OBR.notification.show("[Sync2View] One-time view update processed.", "SUCCESS");
+                            util.notify("[Sync2View] One-time view update processed.", "SUCCESS");
                         }
                         // Clear force_update and set player_moved: true after processing
                         await util.setRoomMeta({
@@ -495,7 +495,7 @@ var util = {
                         sel_bounds = await OBR.scene.items.getItemBounds(util.meta.screen_el.items.arrayOfProp("id"));
                     }
                     if (!sel_bounds) {
-                        await OBR.notification.show("[Follow] No selection bounds to move to.", "ERROR");
+                        util.notify("[Follow] No selection bounds to move to.", "ERROR");
                         return;
                     }
                     // Only enforce min size if Fit to Object is NOT checked
@@ -512,7 +512,7 @@ var util = {
                     }
                     await OBR.viewport.animateToBounds(sel_bounds);
                 } else {
-                    await OBR.notification.show("[updatePos] No screen_el found.", "INFO");
+                    util.notify("[updatePos] No screen_el found.", "INFO");
                 }
             }
             util.hooks.push({
@@ -662,12 +662,12 @@ var util = {
                 await util.setRoomMeta({
                     fit_to_object: fitToObject
                 });
-                await OBR.notification.show("'Fit to Object' setting updated", "SUCCESS");
+                util.notify("'Fit to Object' setting updated", "SUCCESS");
                 // Optionally update the current selected screen element if needed
                 await util.updateCurrSelectedScreenEl();
             } else {
                 await util.setRoomMeta({ fit_to_object: fitToObject });
-                await OBR.notification.show("'Fit to Object' setting updated (no view update, Not Following)", "INFO");
+                util.notify("'Fit to Object' setting updated (no view update, Not Following)", "INFO");
             }
             // If unticked, restore Width/Height fields to last manual screen size if available
             if (!fitToObject) {
@@ -709,7 +709,7 @@ var util = {
                 screen_size: new_sizes
             })
 
-            await OBR.notification.show("Sizes saved", "SUCCESS")
+            util.notify("Sizes saved", "SUCCESS")
             await util.updateCurrSelectedScreenEl()
         }
 
@@ -717,7 +717,7 @@ var util = {
             await util.setRoomMeta({
                 screen_id: 0
             })
-            await OBR.notification.show("Screen user cleared!", "ERROR")
+            util.notify("Screen user cleared!", "ERROR")
             await util.updatePlayerlist()
         })
 
@@ -778,18 +778,18 @@ var util = {
                 if (!util.meta.screen_follow) {
                     await util.setRoomMeta({ screen_follow: true, screen_el: { ...screenEl, player_moved: false, force_update: true } });
                     await util.checkFollow(); // This will do refresh and updateCurrSelectedScreenEl
-                    await OBR.notification.show("Moving screen to view (one-time update)", "SUCCESS");
+                    util.notify("Moving screen to view (one-time update)", "SUCCESS");
                     setTimeout(async () => {
                         await util.setRoomMeta({ screen_follow: false, screen_el: { ...screenEl, player_moved: true, force_update: false } });
                         await util.checkFollow();
-                        await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
+                        util.notify("Not following: Player view will not be updated further.", "INFO");
                     }, 2000); // Increased timeout to 2 seconds
                 } else {
                     screenEl.player_moved = false;
                     await util.setRoomMeta({
                         screen_el: screenEl
                     });
-                    await OBR.notification.show("Moving screen to view", "SUCCESS");
+                    util.notify("Moving screen to view", "SUCCESS");
                 }
             },
         });
@@ -982,18 +982,18 @@ var util = {
                 if (!util.meta.screen_follow) {
                     await util.setRoomMeta({ screen_follow: true, screen_el: { ...screenEl, player_moved: false, force_update: true } });
                     await util.checkFollow();
-                    await OBR.notification.show("Moving screen to view (one-time update)", "SUCCESS");
+                    util.notify("Moving screen to view (one-time update)", "SUCCESS");
                     setTimeout(async () => {
                         await util.setRoomMeta({ screen_follow: false, screen_el: { ...screenEl, player_moved: true, force_update: false } });
                         await util.checkFollow();
-                        await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
+                        util.notify("Not following: Player view will not be updated further.", "INFO");
                     }, 2000); // Increased timeout to 2 seconds
                 } else {
                     screenEl.player_moved = false;
                     await util.setRoomMeta({
                         screen_el: screenEl
                     });
-                    await OBR.notification.show("Moving screen to view", "SUCCESS");
+                    util.notify("Moving screen to view", "SUCCESS");
                 }
             },
         });
@@ -1193,7 +1193,7 @@ var util = {
             await util.updateScenelist()
         //     await util.updateCurrSelectedScreenEl()
 
-            await OBR.notification.show("Using scene", "SUCCESS")
+            util.notify("Using scene", "SUCCESS")
         })
 
         // setup add to scene button
