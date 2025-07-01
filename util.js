@@ -584,6 +584,18 @@ var util = {
             }, 300)
         })
 
+        // Add event listener for Fit to Object checkbox
+        $(document).on("change", "#fit_to_object", async function (evt) {
+            const fitToObject = $(this).is(":checked");
+            await util.setRoomMeta({
+                fit_to_object: fitToObject
+            });
+            await OBR.notification.show("'Fit to Object' setting updated", "SUCCESS");
+            // Optionally update the current selected screen element if needed
+            await util.updateCurrSelectedScreenEl();
+        });
+
+
         async function saveSizes() {
             let ttt = $("input.screen_size")
             let new_sizes = {}
