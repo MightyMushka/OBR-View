@@ -532,7 +532,7 @@ var util = {
         $("#container").append(`<div id="screen_control">
             <h3>Screen Control</h3>
             ${(!util.inited.screen_size_set ? `<div class="warning" id="screen_size_set">Input the size for the screen presentator</div>` : "")}
-            <table class="screen_wrap">
+            <table class="screen_wrap>
                 <tr class="screen_inp_wrap">
                     <td colspan=3>
                     <label for="selector">Screensizes: </label><br>
@@ -648,9 +648,44 @@ var util = {
                 await util.setRoomMeta({ fit_to_object: fitToObject });
                 await OBR.notification.show("'Fit to Object' setting updated (no view update, Not Following)", "INFO");
             }
+            // If unticked, restore Width/Height fields to current screen size
+            if (!fitToObject && util.meta.screen_size) {
+                $("#width").val(util.meta.screen_size.width);
+                $("#height").val(util.meta.screen_size.height);
+            }
         });
 
-
+        // Patch: enforce min size for Fit to Object in updateCurrSelectedScreenEl
+        const originalUpdateCurrSelectedScreenEl = util.updateCurrSelectedScreenEl;
+        util.updateCurrSelectedScreenEl = async function () {
+            let selectionBounds = await OBR.scene.items.getItemBounds(util.meta.screen_el.items.arrayOfProp("id"));
+            // If Fit to Object, enforce min size from screen_size
+            if (util.meta.fit_to_object && util.meta.screen_size && selectionBounds) {
+                const dpi = await OBR.scene.grid.getDpi();
+                const minWidth = util.meta.screen_size.width * dpi;
+                const minHeight = util.meta.screen_size.height * dpi;
+                const width = selectionBounds.max.x - selectionBounds.min.x;
+                const height = selectionBounds.max.y - selectionBounds.min.y;
+                if (width < minWidth || height < minHeight) {
+                    // Expand bounds to min size, centered
+                    const center = selectionBounds.center;
+                    selectionBounds.max = {
+                        x: center.x + minWidth / 2,
+                        y: center.y + minHeight / 2
+                    };
+                    selectionBounds.min = {
+                        x: center.x - minWidth / 2,
+                        y: center.y - minHeight / 2
+                    };
+                }
+            }
+            await util.setRoomMeta({
+                screen_el: {
+                    items: util.meta.screen_el.items,
+                    selectionBounds: selectionBounds
+                }
+            });
+        }
         async function saveSizes() {
             let ttt = $("input.screen_size")
             let new_sizes = {}
@@ -714,7 +749,7 @@ var util = {
                         await util.setRoomMeta({ screen_follow: false, screen_el: { ...screenEl, player_moved: true, force_update: false } });
                         await util.checkFollow();
                         await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
-                    }, 1200);
+                    }, 2000); // Increased timeout to 2 seconds
                 } else {
                     screenEl.player_moved = false;
                     await util.setRoomMeta({
@@ -851,7 +886,7 @@ var util = {
                         await util.setRoomMeta({ screen_follow: false, screen_el: { ...screenEl, player_moved: true, force_update: false } });
                         await util.checkFollow();
                         await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
-                    }, 1200); // Increased timeout to 1200ms
+                    }, 2000); // Increased timeout to 2 seconds
                 } else {
                     screenEl.player_moved = false;
                     await util.setRoomMeta({
