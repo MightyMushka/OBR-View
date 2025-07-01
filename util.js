@@ -636,6 +636,12 @@ var util = {
         // Add event listener for Fit to Object checkbox
         $(document).on("change", "#fit_to_object", async function (evt) {
             const fitToObject = $(this).is(":checked");
+            if (fitToObject) {
+                // Save the last manual screen size before switching to Fit to Object
+                if (util.meta.screen_size) {
+                    util.lastManualScreenSize = { ...util.meta.screen_size };
+                }
+            }
             // Only update if following is enabled and not in sync2view_in_progress
             if (util.meta.screen_follow && !util.meta.sync2view_in_progress) {
                 await util.setRoomMeta({
@@ -648,10 +654,15 @@ var util = {
                 await util.setRoomMeta({ fit_to_object: fitToObject });
                 await OBR.notification.show("'Fit to Object' setting updated (no view update, Not Following)", "INFO");
             }
-            // If unticked, restore Width/Height fields to current screen size
-            if (!fitToObject && util.meta.screen_size) {
-                $("#width").val(util.meta.screen_size.width);
-                $("#height").val(util.meta.screen_size.height);
+            // If unticked, restore Width/Height fields to last manual screen size if available
+            if (!fitToObject) {
+                let restore = util.lastManualScreenSize || util.meta.screen_size;
+                if (restore) {
+                    $("#width").val(restore.width);
+                    $("#height").val(restore.height);
+                    // Optionally restore screen_size in meta as well
+                    await util.setRoomMeta({ screen_size: restore });
+                }
             }
         });
 
