@@ -442,39 +442,31 @@ var util = {
                 if (util.meta.screen_id && await OBR.player.getId() != util.meta.screen_id) return
 
                 if (typeof util.meta.screen_el != "undefined") {
-                    // var pos_el = await OBR.scene.items.getItems(util.meta.screen_el.items.map(function (a) {
-                    //     return a.id
-                    // }));
-                    var _w = util.meta.screen_size.width // await prompt(`Width (width in grid)`)
-                    var _h = util.meta.screen_size.height // await prompt(`Height (height in grid)`)
-    
-                    var dpi = await OBR.scene.grid.getDpi()
-                    var scale = await OBR.scene.grid.getScale()
-                    var min_width = (_w * dpi) // scale.parsed.multiplier
-                    var min_height = (_h * dpi) // scale.parsed.multiplier
+                    // If player_moved is true, do not update the view
+                    if (util.meta.screen_el.player_moved) return;
 
-                    if (util.meta.screen_el.player_moved) {
-                        // Player moved the token, center and update
-                        var new_selection_bounds = await OBR.scene.items.getItemBounds([util.meta.screen_el.id])
-                        var sel_bounds = new_selection_bounds
-
-                        await util.setRoomMeta({
-                            screen_el: {
-                                id: util.meta.screen_el.id,
-                                items: util.meta.screen_el.items,
-                                selectionBounds: new_selection_bounds,
-                                player_moved: false
-                            }
-                        })
-                    } else
-                        var sel_bounds = util.meta.screen_el.selectionBounds
-
-                    if (sel_bounds.max.x - sel_bounds.min.x < min_width || sel_bounds.max.y - sel_bounds.min.y < min_height) {
-                        sel_bounds.max = { y: sel_bounds.center.y + (min_height / 2), x: sel_bounds.center.x + (min_width / 2) }
-                        sel_bounds.min = { y: sel_bounds.center.y - (min_height / 2), x: sel_bounds.center.x - (min_width / 2) }
+                    // Use selectionBounds if present (for Fit to Object), else fallback to calculated bounds
+                    let sel_bounds = util.meta.screen_el.selectionBounds;
+                    if (!sel_bounds && util.meta.screen_el.items) {
+                        sel_bounds = await OBR.scene.items.getItemBounds(util.meta.screen_el.items.arrayOfProp("id"));
                     }
 
-                    await OBR.viewport.animateToBounds(sel_bounds)
+                    // If Fit to Object is not used, enforce min size
+                    if (!util.meta.fit_to_object && sel_bounds && util.meta.screen_size) {
+                        var _w = util.meta.screen_size.width;
+                        var _h = util.meta.screen_size.height;
+                        var dpi = await OBR.scene.grid.getDpi();
+                        var min_width = (_w * dpi);
+                        var min_height = (_h * dpi);
+                        if (sel_bounds.max.x - sel_bounds.min.x < min_width || sel_bounds.max.y - sel_bounds.min.y < min_height) {
+                            sel_bounds.max = { y: sel_bounds.center.y + (min_height / 2), x: sel_bounds.center.x + (min_width / 2) }
+                            sel_bounds.min = { y: sel_bounds.center.y - (min_height / 2), x: sel_bounds.center.x - (min_width / 2) }
+                        }
+                    }
+
+                    if (sel_bounds) {
+                        await OBR.viewport.animateToBounds(sel_bounds)
+                    }
                 }
             }
             util.hooks.push({
