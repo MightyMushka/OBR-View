@@ -540,11 +540,11 @@ var util = {
             <button id="toggle_follow" class="following">Follow</button>
             <button id="refresh_pos" class="">Refresh</button><br>
             <!-- <button id="rm_screenuser" class="red">Remove</button> -->
-            
+            <label style="margin-top:8px;display:inline-block;">
+                <input type="checkbox" id="fit_to_object" ${util.meta?.fit_to_object ? "checked" : ""}/> Fit to Object
+            </label>
             <hr>
         </div>`)
-        // <label for="pos_x">X:</label><input id="pos_x" placeholder="0.00" /><br>
-        // <label for="pos_y">Y:</label><input id="pos_y" placeholder="0.00" /><br><button id="animate_pos" class="red">Move user</button><br>
         $(document).on("change", "#screen_control select#selector", async function (evt) {
             var value = this.value
             var screensizes = {
@@ -635,19 +635,23 @@ var util = {
                 },
             ],
             async onClick(_, elementId) {
-                // // debugger
-                await util.setRoomMeta({
-                    screen_el: _
-                })
+                // Check fit_to_object from meta (persisted)
+                const fitToObject = util.meta?.fit_to_object;
+                let screenEl = { ..._ };
 
-                await OBR.notification.show("Moving screen to view", "SUCCESS")
-                // OBR.popover.open({
-                //     id: "dk.planeshifter.scrying/shapeTracker",
-                //     url: "/shapeTracker.html",
-                //     height: 80,
-                //     width: 200,
-                //     anchorElementId: elementId,
-                // });
+                if (fitToObject && _.items && _.items.length > 0) {
+                    // Get bounds of selected items
+                    const bounds = await OBR.scene.items.getItemBounds(_.items.map(i => i.id));
+                    screenEl.selectionBounds = bounds;
+                }
+                // Explicit GM sync: always clear player_moved
+                screenEl.player_moved = false;
+
+                await util.setRoomMeta({
+                    screen_el: screenEl
+                });
+
+                await OBR.notification.show("Moving screen to view", "SUCCESS");
             },
         });
         await OBR.contextMenu.create({
@@ -695,6 +699,9 @@ var util = {
                 // if screen follow is active move with shape
                 if (!util.meta.screen_follow) return
                 // if selected screen el has changed update pos
+
+                // Prevent GM from overwriting player_moved=true unless GM explicitly re-syncs
+                if (util.meta.screen_el && util.meta.screen_el.player_moved) return;
 
                 var new_screen_itm = items.find((itm) => {
                     return util.meta.screen_el.items.arrayOfProp("id").includes(itm.id) ? itm : false
