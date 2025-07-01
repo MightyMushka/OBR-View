@@ -651,8 +651,10 @@ var util = {
                     delete screenEl.selectionBounds;
                 }
                 screenEl.player_moved = false;
+                // Set screen_follow to false after initial sync
                 await util.setRoomMeta({
-                    screen_el: screenEl
+                    screen_el: screenEl,
+                    screen_follow: false
                 });
                 await OBR.notification.show("Moving screen to view", "SUCCESS");
             },
