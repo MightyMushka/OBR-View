@@ -614,8 +614,8 @@ var util = {
         // Add event listener for Fit to Object checkbox
         $(document).on("change", "#fit_to_object", async function (evt) {
             const fitToObject = $(this).is(":checked");
-            // Only update if following is enabled
-            if (util.meta.screen_follow) {
+            // Only update if following is enabled and not in sync2view_in_progress
+            if (util.meta.screen_follow && !util.meta.sync2view_in_progress) {
                 await util.setRoomMeta({
                     fit_to_object: fitToObject
                 });
@@ -685,14 +685,17 @@ var util = {
                 }
                 // If Not Following, temporarily enable follow, update, then disable
                 if (!util.meta.screen_follow) {
+                    // Set sync2view_in_progress flag
+                    await util.setRoomMeta({ sync2view_in_progress: true });
                     // Temporarily enable follow
                     await util.setRoomMeta({ screen_follow: true, screen_el: { ...screenEl, player_moved: false } });
                     await OBR.notification.show("Moving screen to view (one-time update)", "SUCCESS");
-                    // Immediately disable follow and set player_moved: true
+                    // Immediately disable follow and set player_moved: true, and clear sync2view_in_progress
                     setTimeout(async () => {
                         await util.setRoomMeta({
                             screen_follow: false,
-                            screen_el: { ...screenEl, player_moved: true }
+                            screen_el: { ...screenEl, player_moved: true },
+                            sync2view_in_progress: false
                         });
                         await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
                     }, 250);
@@ -747,8 +750,8 @@ var util = {
             group: "itemsChanged",
             role: "GM",
             func: async function (items) {
-                // Only update screen_el if following is enabled
-                if (!util.meta.screen_follow) return;
+                // Only update screen_el if following is enabled and not in sync2view_in_progress
+                if (!util.meta.screen_follow || util.meta.sync2view_in_progress) return;
                 // if selected screen el has changed update pos
 
                 // Prevent GM from overwriting player_moved=true unless GM explicitly re-syncs
@@ -825,14 +828,17 @@ var util = {
                 }
                 // If Not Following, temporarily enable follow, update, then disable
                 if (!util.meta.screen_follow) {
+                    // Set sync2view_in_progress flag
+                    await util.setRoomMeta({ sync2view_in_progress: true });
                     // Temporarily enable follow
                     await util.setRoomMeta({ screen_follow: true, screen_el: { ...screenEl, player_moved: false } });
                     await OBR.notification.show("Moving screen to view (one-time update)", "SUCCESS");
-                    // Immediately disable follow and set player_moved: true
+                    // Immediately disable follow and set player_moved: true, and clear sync2view_in_progress
                     setTimeout(async () => {
                         await util.setRoomMeta({
                             screen_follow: false,
-                            screen_el: { ...screenEl, player_moved: true }
+                            screen_el: { ...screenEl, player_moved: true },
+                            sync2view_in_progress: false
                         });
                         await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
                     }, 250);
@@ -887,8 +893,8 @@ var util = {
             group: "itemsChanged",
             role: "GM",
             func: async function (items) {
-                // Only update screen_el if following is enabled
-                if (!util.meta.screen_follow) return;
+                // Only update screen_el if following is enabled and not in sync2view_in_progress
+                if (!util.meta.screen_follow || util.meta.sync2view_in_progress) return;
                 // if selected screen el has changed update pos
 
                 // Prevent GM from overwriting player_moved=true unless GM explicitly re-syncs
