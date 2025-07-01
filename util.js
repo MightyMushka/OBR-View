@@ -659,6 +659,10 @@ var util = {
                 },
             ],
             async onClick(_, elementId) {
+                if (!util.meta.screen_follow) {
+                    await OBR.notification.show("Not following: Player view will not be updated.", "INFO");
+                    return;
+                }
                 // Always get bounds of selected items for selectionBounds
                 let selectionBounds = null;
                 if (_.items && _.items.length > 0) {
@@ -678,10 +682,8 @@ var util = {
                     delete screenEl.selectionBounds;
                 }
                 screenEl.player_moved = false;
-                // Set screen_follow to false after initial sync
                 await util.setRoomMeta({
-                    screen_el: screenEl,
-                    screen_follow: false
+                    screen_el: screenEl
                 });
                 await OBR.notification.show("Moving screen to view", "SUCCESS");
             },
@@ -728,8 +730,8 @@ var util = {
             group: "itemsChanged",
             role: "GM",
             func: async function (items) {
-                // if screen follow is active move with shape
-                if (!util.meta.screen_follow) return
+                // Only update screen_el if following is enabled
+                if (!util.meta.screen_follow) return;
                 // if selected screen el has changed update pos
 
                 // Prevent GM from overwriting player_moved=true unless GM explicitly re-syncs
@@ -771,19 +773,135 @@ var util = {
                         })
                     }
                 }
+            },
+            args: []
+        })
 
+        // Update Sync2View context menu handler to only update screen_el if following is enabled
+        await OBR.contextMenu.create({
+            id: "dk.planeshifter.scrying",
+            icons: [
+                {
+                    icon: "/icon.svg",
+                    label: "Sync2View",
+                    filter: {}
+                },
+            ],
+            async onClick(_, elementId) {
+                if (!util.meta.screen_follow) {
+                    await OBR.notification.show("Not following: Player view will not be updated.", "INFO");
+                    return;
+                }
+                // Always get bounds of selected items for selectionBounds
+                let selectionBounds = null;
+                if (_.items && _.items.length > 0) {
+                    selectionBounds = await OBR.scene.items.getItemBounds(_.items.map(i => i.id));
+                }
+                const fitToObject = util.meta?.fit_to_object;
+                let screenEl = { ..._ };
+                if (fitToObject && selectionBounds) {
+                    screenEl.selectionBounds = selectionBounds;
+                    // Also update screen_size to match object size
+                    const width = (selectionBounds.max.x - selectionBounds.min.x) / (await OBR.scene.grid.getDpi());
+                    const height = (selectionBounds.max.y - selectionBounds.min.y) / (await OBR.scene.grid.getDpi());
+                    await util.setRoomMeta({
+                        screen_size: { width, height }
+                    });
+                } else {
+                    delete screenEl.selectionBounds;
+                }
+                screenEl.player_moved = false;
+                await util.setRoomMeta({
+                    screen_el: screenEl
+                });
+                await OBR.notification.show("Moving screen to view", "SUCCESS");
+            },
+        });
+        await OBR.contextMenu.create({
+            id: "dk.planeshifter.scrying/resize",
+            icons: [
+                {
+                    icon: "/resize.svg",
+                    label: "Resize to Screen size",
+                    filter: {}
+                },
+            ],
+            async onClick(_, elementId) {
+                // debugger
+                // OBR.popover.open({
+                //     id: "dk.planeshifter.scrying/shapeTracker",
+                //     url: "/shapeTracker.html",
+                //     height: 80,
+                //     width: 200,
+                //     anchorElementId: elementId,
+                // });
+                var _w = util.meta.screen_size.width // await prompt(`Width (width in grid)`)
+                var _h = util.meta.screen_size.height // await prompt(`Height (height in grid)`)
 
-                // updatePos()
+                var dpi = await OBR.scene.grid.getDpi()
+                var scale = await OBR.scene.grid.getScale()
 
-                // var screen_itm = items.map((itm) => {
-                //     return util.meta.screen_el.items.arrayOfProp("id").includes(itm.id) ? itm : false
-                // }).filter(Boolean)
+                OBR.scene.items.updateItems(_.items, (items) => {
+                    for (let item of items) {
+                        // debugger
+                        _h = _h / item.scale.y
+                        _w = _w / item.scale.x
 
-                // // debugger
-                // if (util.getDifference(screen_itm, util.meta.screen_el.find((el) => {
-                //     return screen_itm.id == el.id ? true : false
-                // })))
-                //     updatePos()
+                        item.width = (_w * dpi) // scale.parsed.multiplier
+                        item.height = (_h * dpi) // scale.parsed.multiplier
+                        item.visible = false; // hide the item
+                    }
+                });
+            },
+        });
+        // event listner for items
+        util.hooks.push({
+            group: "itemsChanged",
+            role: "GM",
+            func: async function (items) {
+                // Only update screen_el if following is enabled
+                if (!util.meta.screen_follow) return;
+                // if selected screen el has changed update pos
+
+                // Prevent GM from overwriting player_moved=true unless GM explicitly re-syncs
+                if (util.meta.screen_el && util.meta.screen_el.player_moved) return;
+
+                var new_screen_itm = items.find((itm) => {
+                    return util.meta.screen_el.items.arrayOfProp("id").includes(itm.id) ? itm : false
+                })
+                var old_screen_el = util.meta.screen_el.items.find((el) => {
+                    return items.arrayOfProp("id").includes(el.id) ? el : false
+                })
+
+                var update_user = util.players.find((a) => a.id == new_screen_itm.lastModifiedUserId)
+
+                if (update_user && update_user.role == "PLAYER") {
+                    await util.setRoomMeta({
+                        screen_el: {
+                            id: new_screen_itm.id,
+                            items: util.meta.screen_el.items,
+                            selectionBounds: false,
+                            player_moved: true
+                        }
+                    })
+                } else {
+                    var diff = util.getDifference(new_screen_itm, old_screen_el)
+
+                    if (typeof diff.position != "undefined") {
+                        // save new pos
+                        var new_selection_bounds = await OBR.scene.items.getItemBounds([new_screen_itm.id])
+                        // debugger
+
+                        await util.setRoomMeta({
+                            screen_el: {
+                                id: new_screen_itm.id,
+                                items: util.meta.screen_el.items,
+                                selectionBounds: new_selection_bounds,
+                                player_moved: false
+                            }
+                        })
+                    }
+                }
             },
             args: []
         })
