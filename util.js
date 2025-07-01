@@ -436,23 +436,19 @@ var util = {
     setupScreenControl: async function () {
         if (await util.isPlayer()) {
             // activate listner
-            console.log(util.meta.screen_el)
             async function updatePos() {
-                // if a screen user is selected only update that user otherwise return
-                if (util.meta.screen_id && await OBR.player.getId() != util.meta.screen_id) return
-
-                if (typeof util.meta.screen_el != "undefined") {
+                if (util.meta.screen_id && await OBR.player.getId() != util.meta.screen_id) return;
+                if (typeof util.meta.screen_el !== "undefined") {
                     // If player_moved is true, do not update the view
                     if (util.meta.screen_el.player_moved) return;
-
-                    // Use selectionBounds if present (for Fit to Object), else fallback to calculated bounds
+                    // Always use selectionBounds if present
                     let sel_bounds = util.meta.screen_el.selectionBounds;
                     if (!sel_bounds && util.meta.screen_el.items) {
                         sel_bounds = await OBR.scene.items.getItemBounds(util.meta.screen_el.items.arrayOfProp("id"));
                     }
-
-                    // If Fit to Object is not used, enforce min size
-                    if (!util.meta.fit_to_object && sel_bounds && util.meta.screen_size) {
+                    if (!sel_bounds) return;
+                    // Only enforce min size if Fit to Object is NOT checked
+                    if (!util.meta.fit_to_object && util.meta.screen_size) {
                         var _w = util.meta.screen_size.width;
                         var _h = util.meta.screen_size.height;
                         var dpi = await OBR.scene.grid.getDpi();
@@ -463,10 +459,7 @@ var util = {
                             sel_bounds.min = { y: sel_bounds.center.y - (min_height / 2), x: sel_bounds.center.x - (min_width / 2) }
                         }
                     }
-
-                    if (sel_bounds) {
-                        await OBR.viewport.animateToBounds(sel_bounds)
-                    }
+                    await OBR.viewport.animateToBounds(sel_bounds);
                 }
             }
             util.hooks.push({
@@ -474,15 +467,15 @@ var util = {
                 role: "PLAYER",
                 func: updatePos,
                 args: []
-            })
+            });
             util.hooks.push({
                 group: "itemsChanged",
                 role: "PLAYER",
                 func: updatePos,
                 args: []
-            })
-            updatePos()
-            return
+            });
+            updatePos();
+            return;
         }
         // setup controlPanel
         // btns:
@@ -627,22 +620,23 @@ var util = {
                 },
             ],
             async onClick(_, elementId) {
-                // Check fit_to_object from meta (persisted)
+                // Always get bounds of selected items for selectionBounds
+                let selectionBounds = null;
+                if (_.items && _.items.length > 0) {
+                    selectionBounds = await OBR.scene.items.getItemBounds(_.items.map(i => i.id));
+                }
+                // If Fit to Object is checked, use selectionBounds; otherwise, clear it
                 const fitToObject = util.meta?.fit_to_object;
                 let screenEl = { ..._ };
-
-                if (fitToObject && _.items && _.items.length > 0) {
-                    // Get bounds of selected items
-                    const bounds = await OBR.scene.items.getItemBounds(_.items.map(i => i.id));
-                    screenEl.selectionBounds = bounds;
+                if (fitToObject && selectionBounds) {
+                    screenEl.selectionBounds = selectionBounds;
+                } else {
+                    delete screenEl.selectionBounds;
                 }
-                // Explicit GM sync: always clear player_moved
                 screenEl.player_moved = false;
-
                 await util.setRoomMeta({
                     screen_el: screenEl
                 });
-
                 await OBR.notification.show("Moving screen to view", "SUCCESS");
             },
         });
