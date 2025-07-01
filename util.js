@@ -687,18 +687,19 @@ var util = {
                 if (!util.meta.screen_follow) {
                     // Set sync2view_in_progress flag
                     await util.setRoomMeta({ sync2view_in_progress: true });
-                    // Temporarily enable follow
+                    // Step 1: Enable follow and update screen_el
                     await util.setRoomMeta({ screen_follow: true, screen_el: { ...screenEl, player_moved: false } });
                     await OBR.notification.show("Moving screen to view (one-time update)", "SUCCESS");
-                    // Immediately disable follow and set player_moved: true, and clear sync2view_in_progress
+                    // Step 2: Wait for a short period to allow player to process the move
                     setTimeout(async () => {
+                        // Step 3: Disable follow and set player_moved: true, clear sync2view_in_progress
                         await util.setRoomMeta({
                             screen_follow: false,
                             screen_el: { ...screenEl, player_moved: true },
                             sync2view_in_progress: false
                         });
                         await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
-                    }, 250);
+                    }, 400); // Increased delay for reliability
                 } else {
                     screenEl.player_moved = false;
                     await util.setRoomMeta({
@@ -830,18 +831,19 @@ var util = {
                 if (!util.meta.screen_follow) {
                     // Set sync2view_in_progress flag
                     await util.setRoomMeta({ sync2view_in_progress: true });
-                    // Temporarily enable follow
+                    // Step 1: Enable follow and update screen_el
                     await util.setRoomMeta({ screen_follow: true, screen_el: { ...screenEl, player_moved: false } });
                     await OBR.notification.show("Moving screen to view (one-time update)", "SUCCESS");
-                    // Immediately disable follow and set player_moved: true, and clear sync2view_in_progress
+                    // Step 2: Wait for a short period to allow player to process the move
                     setTimeout(async () => {
+                        // Step 3: Disable follow and set player_moved: true, clear sync2view_in_progress
                         await util.setRoomMeta({
                             screen_follow: false,
                             screen_el: { ...screenEl, player_moved: true },
                             sync2view_in_progress: false
                         });
                         await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
-                    }, 250);
+                    }, 400); // Increased delay for reliability
                 } else {
                     screenEl.player_moved = false;
                     await util.setRoomMeta({
