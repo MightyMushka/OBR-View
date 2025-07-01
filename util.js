@@ -614,12 +614,18 @@ var util = {
         // Add event listener for Fit to Object checkbox
         $(document).on("change", "#fit_to_object", async function (evt) {
             const fitToObject = $(this).is(":checked");
-            await util.setRoomMeta({
-                fit_to_object: fitToObject
-            });
-            await OBR.notification.show("'Fit to Object' setting updated", "SUCCESS");
-            // Optionally update the current selected screen element if needed
-            await util.updateCurrSelectedScreenEl();
+            // Only update if following is enabled
+            if (util.meta.screen_follow) {
+                await util.setRoomMeta({
+                    fit_to_object: fitToObject
+                });
+                await OBR.notification.show("'Fit to Object' setting updated", "SUCCESS");
+                // Optionally update the current selected screen element if needed
+                await util.updateCurrSelectedScreenEl();
+            } else {
+                await util.setRoomMeta({ fit_to_object: fitToObject });
+                await OBR.notification.show("'Fit to Object' setting updated (no view update, Not Following)", "INFO");
+            }
         });
 
 
@@ -677,21 +683,25 @@ var util = {
                 } else {
                     delete screenEl.selectionBounds;
                 }
-                screenEl.player_moved = false;
-                await util.setRoomMeta({
-                    screen_el: screenEl
-                });
-                await OBR.notification.show("Moving screen to view", "SUCCESS");
-                // If Not Following, immediately set player_moved: true and screen_follow: false
+                // If Not Following, temporarily enable follow, update, then disable
                 if (!util.meta.screen_follow) {
+                    // Temporarily enable follow
+                    await util.setRoomMeta({ screen_follow: true, screen_el: { ...screenEl, player_moved: false } });
+                    await OBR.notification.show("Moving screen to view (one-time update)", "SUCCESS");
+                    // Immediately disable follow and set player_moved: true
+                    setTimeout(async () => {
+                        await util.setRoomMeta({
+                            screen_follow: false,
+                            screen_el: { ...screenEl, player_moved: true }
+                        });
+                        await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
+                    }, 250);
+                } else {
+                    screenEl.player_moved = false;
                     await util.setRoomMeta({
-                        screen_el: {
-                            ...screenEl,
-                            player_moved: true
-                        },
-                        screen_follow: false
+                        screen_el: screenEl
                     });
-                    await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
+                    await OBR.notification.show("Moving screen to view", "SUCCESS");
                 }
             },
         });
@@ -813,21 +823,25 @@ var util = {
                 } else {
                     delete screenEl.selectionBounds;
                 }
-                screenEl.player_moved = false;
-                await util.setRoomMeta({
-                    screen_el: screenEl
-                });
-                await OBR.notification.show("Moving screen to view", "SUCCESS");
-                // If Not Following, immediately set player_moved: true and screen_follow: false
+                // If Not Following, temporarily enable follow, update, then disable
                 if (!util.meta.screen_follow) {
+                    // Temporarily enable follow
+                    await util.setRoomMeta({ screen_follow: true, screen_el: { ...screenEl, player_moved: false } });
+                    await OBR.notification.show("Moving screen to view (one-time update)", "SUCCESS");
+                    // Immediately disable follow and set player_moved: true
+                    setTimeout(async () => {
+                        await util.setRoomMeta({
+                            screen_follow: false,
+                            screen_el: { ...screenEl, player_moved: true }
+                        });
+                        await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
+                    }, 250);
+                } else {
+                    screenEl.player_moved = false;
                     await util.setRoomMeta({
-                        screen_el: {
-                            ...screenEl,
-                            player_moved: true
-                        },
-                        screen_follow: false
+                        screen_el: screenEl
                     });
-                    await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
+                    await OBR.notification.show("Moving screen to view", "SUCCESS");
                 }
             },
         });
