@@ -579,11 +579,14 @@ var util = {
             await saveSizes()
         })
         $(document).on("click", "button#toggle_follow", async function (evt) {
-            // debugger
-            var following = !util.meta.screen_follow || false
+            var following = !util.meta.screen_follow || false;
             await util.setRoomMeta({
-                screen_follow: following
-            })
+                screen_follow: following,
+                screen_el: {
+                    ...util.meta.screen_el,
+                    player_moved: !following // false if following, true if not following
+                }
+            });
 
             await util.checkFollow()
         })
