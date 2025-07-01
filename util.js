@@ -705,17 +705,16 @@ var util = {
                 } else {
                     delete screenEl.selectionBounds;
                 }
-                // If Not Following, mimic manual toggle: enable follow, call checkFollow, update, wait, disable follow, call checkFollow
+                // If Not Following, mimic the exact workflow of the Follow button
                 if (!util.meta.screen_follow) {
                     await util.setRoomMeta({ screen_follow: true, screen_el: { ...screenEl, player_moved: false, force_update: true } });
-                    await util.checkFollow();
-                    await util.updateCurrSelectedScreenEl();
+                    await util.checkFollow(); // This will do refresh and updateCurrSelectedScreenEl
                     await OBR.notification.show("Moving screen to view (one-time update)", "SUCCESS");
                     setTimeout(async () => {
                         await util.setRoomMeta({ screen_follow: false, screen_el: { ...screenEl, player_moved: true, force_update: false } });
                         await util.checkFollow();
                         await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
-                    }, 1200); // Increased timeout to 1200ms
+                    }, 1200);
                 } else {
                     screenEl.player_moved = false;
                     await util.setRoomMeta({
@@ -847,7 +846,6 @@ var util = {
                 if (!util.meta.screen_follow) {
                     await util.setRoomMeta({ screen_follow: true, screen_el: { ...screenEl, player_moved: false, force_update: true } });
                     await util.checkFollow();
-                    await util.updateCurrSelectedScreenEl(); // <-- call here, in the middle
                     await OBR.notification.show("Moving screen to view (one-time update)", "SUCCESS");
                     setTimeout(async () => {
                         await util.setRoomMeta({ screen_follow: false, screen_el: { ...screenEl, player_moved: true, force_update: false } });
