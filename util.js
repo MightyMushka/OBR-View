@@ -625,11 +625,16 @@ var util = {
                 if (_.items && _.items.length > 0) {
                     selectionBounds = await OBR.scene.items.getItemBounds(_.items.map(i => i.id));
                 }
-                // If Fit to Object is checked, use selectionBounds; otherwise, clear it
                 const fitToObject = util.meta?.fit_to_object;
                 let screenEl = { ..._ };
                 if (fitToObject && selectionBounds) {
                     screenEl.selectionBounds = selectionBounds;
+                    // Also update screen_size to match object size
+                    const width = (selectionBounds.max.x - selectionBounds.min.x) / (await OBR.scene.grid.getDpi());
+                    const height = (selectionBounds.max.y - selectionBounds.min.y) / (await OBR.scene.grid.getDpi());
+                    await util.setRoomMeta({
+                        screen_size: { width, height }
+                    });
                 } else {
                     delete screenEl.selectionBounds;
                 }
