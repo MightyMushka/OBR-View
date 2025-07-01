@@ -458,19 +458,24 @@ var util = {
             async function updatePos() {
                 if (util.meta.screen_id && await OBR.player.getId() != util.meta.screen_id) return;
                 if (typeof util.meta.screen_el !== "undefined") {
-                    // If force_update is set, always update view, then clear force_update
+                    // If force_update is set, always update view, then clear force_update and set player_moved: true
                     if (util.meta.screen_el.force_update) {
                         let sel_bounds = util.meta.screen_el.selectionBounds;
                         if (!sel_bounds && util.meta.screen_el.items) {
                             sel_bounds = await OBR.scene.items.getItemBounds(util.meta.screen_el.items.arrayOfProp("id"));
                         }
-                        if (!sel_bounds) return;
-                        await OBR.viewport.animateToBounds(sel_bounds);
-                        // Clear force_update after processing
+                        if (!sel_bounds) {
+                            await OBR.notification.show("[Sync2View] No selection bounds to move to.", "ERROR");
+                        } else {
+                            await OBR.viewport.animateToBounds(sel_bounds);
+                            await OBR.notification.show("[Sync2View] One-time view update processed.", "SUCCESS");
+                        }
+                        // Clear force_update and set player_moved: true after processing
                         await util.setRoomMeta({
                             screen_el: {
                                 ...util.meta.screen_el,
-                                force_update: false
+                                force_update: false,
+                                player_moved: true
                             }
                         });
                         return;
@@ -482,7 +487,10 @@ var util = {
                     if (!sel_bounds && util.meta.screen_el.items) {
                         sel_bounds = await OBR.scene.items.getItemBounds(util.meta.screen_el.items.arrayOfProp("id"));
                     }
-                    if (!sel_bounds) return;
+                    if (!sel_bounds) {
+                        await OBR.notification.show("[Follow] No selection bounds to move to.", "ERROR");
+                        return;
+                    }
                     // Only enforce min size if Fit to Object is NOT checked
                     if (!util.meta.fit_to_object && util.meta.screen_size) {
                         var _w = util.meta.screen_size.width;
@@ -496,6 +504,8 @@ var util = {
                         }
                     }
                     await OBR.viewport.animateToBounds(sel_bounds);
+                } else {
+                    await OBR.notification.show("[updatePos] No screen_el found.", "INFO");
                 }
             }
             util.hooks.push({
@@ -700,6 +710,8 @@ var util = {
                     await util.setRoomMeta({ sync2view_in_progress: true });
                     // Step 1: Enable follow and update screen_el with force_update
                     await util.setRoomMeta({ screen_follow: true, screen_el: { ...screenEl, player_moved: false, force_update: true } });
+                    // Force a metadata update to trigger player updatePos
+                    await util.updateCurrSelectedScreenEl();
                     await OBR.notification.show("Moving screen to view (one-time update)", "SUCCESS");
                     // Step 2: Wait for a short period to allow player to process the move
                     setTimeout(async () => {
@@ -843,6 +855,8 @@ var util = {
                     await util.setRoomMeta({ sync2view_in_progress: true });
                     // Step 1: Enable follow and update screen_el with force_update
                     await util.setRoomMeta({ screen_follow: true, screen_el: { ...screenEl, player_moved: false, force_update: true } });
+                    // Force a metadata update to trigger player updatePos
+                    await util.updateCurrSelectedScreenEl();
                     await OBR.notification.show("Moving screen to view (one-time update)", "SUCCESS");
                     // Step 2: Wait for a short period to allow player to process the move
                     setTimeout(async () => {
