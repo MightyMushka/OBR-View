@@ -655,37 +655,7 @@ var util = {
             }
         });
 
-        // Patch: enforce min size for Fit to Object in updateCurrSelectedScreenEl
-        const originalUpdateCurrSelectedScreenEl = util.updateCurrSelectedScreenEl;
-        util.updateCurrSelectedScreenEl = async function () {
-            let selectionBounds = await OBR.scene.items.getItemBounds(util.meta.screen_el.items.arrayOfProp("id"));
-            // If Fit to Object, enforce min size from screen_size
-            if (util.meta.fit_to_object && util.meta.screen_size && selectionBounds) {
-                const dpi = await OBR.scene.grid.getDpi();
-                const minWidth = util.meta.screen_size.width * dpi;
-                const minHeight = util.meta.screen_size.height * dpi;
-                const width = selectionBounds.max.x - selectionBounds.min.x;
-                const height = selectionBounds.max.y - selectionBounds.min.y;
-                if (width < minWidth || height < minHeight) {
-                    // Expand bounds to min size, centered
-                    const center = selectionBounds.center;
-                    selectionBounds.max = {
-                        x: center.x + minWidth / 2,
-                        y: center.y + minHeight / 2
-                    };
-                    selectionBounds.min = {
-                        x: center.x - minWidth / 2,
-                        y: center.y - minHeight / 2
-                    };
-                }
-            }
-            await util.setRoomMeta({
-                screen_el: {
-                    items: util.meta.screen_el.items,
-                    selectionBounds: selectionBounds
-                }
-            });
-        }
+
         async function saveSizes() {
             let ttt = $("input.screen_size")
             let new_sizes = {}
@@ -730,10 +700,27 @@ var util = {
                 const fitToObject = util.meta?.fit_to_object;
                 let screenEl = { ..._ };
                 if (fitToObject && selectionBounds) {
+                    // Enforce minimum screen size
+                    const dpi = await OBR.scene.grid.getDpi();
+                    let width = (selectionBounds.max.x - selectionBounds.min.x) / dpi;
+                    let height = (selectionBounds.max.y - selectionBounds.min.y) / dpi;
+                    let minWidth = util.meta?.screen_size?.width || 0;
+                    let minHeight = util.meta?.screen_size?.height || 0;
+                    if (width < minWidth || height < minHeight) {
+                        // Expand bounds to minimum size, centered
+                        const centerX = (selectionBounds.max.x + selectionBounds.min.x) / 2;
+                        const centerY = (selectionBounds.max.y + selectionBounds.min.y) / 2;
+                        const halfMinW = (minWidth * dpi) / 2;
+                        const halfMinH = (minHeight * dpi) / 2;
+                        selectionBounds.min.x = centerX - halfMinW;
+                        selectionBounds.max.x = centerX + halfMinW;
+                        selectionBounds.min.y = centerY - halfMinH;
+                        selectionBounds.max.y = centerY + halfMinH;
+                        width = minWidth;
+                        height = minHeight;
+                    }
                     screenEl.selectionBounds = selectionBounds;
-                    // Also update screen_size to match object size
-                    const width = (selectionBounds.max.x - selectionBounds.min.x) / (await OBR.scene.grid.getDpi());
-                    const height = (selectionBounds.max.y - selectionBounds.min.y) / (await OBR.scene.grid.getDpi());
+                    // Also update screen_size to match object size (but never smaller than min)
                     await util.setRoomMeta({
                         screen_size: { width, height }
                     });
@@ -867,10 +854,27 @@ var util = {
                 const fitToObject = util.meta?.fit_to_object;
                 let screenEl = { ..._ };
                 if (fitToObject && selectionBounds) {
+                    // Enforce minimum screen size
+                    const dpi = await OBR.scene.grid.getDpi();
+                    let width = (selectionBounds.max.x - selectionBounds.min.x) / dpi;
+                    let height = (selectionBounds.max.y - selectionBounds.min.y) / dpi;
+                    let minWidth = util.meta?.screen_size?.width || 0;
+                    let minHeight = util.meta?.screen_size?.height || 0;
+                    if (width < minWidth || height < minHeight) {
+                        // Expand bounds to minimum size, centered
+                        const centerX = (selectionBounds.max.x + selectionBounds.min.x) / 2;
+                        const centerY = (selectionBounds.max.y + selectionBounds.min.y) / 2;
+                        const halfMinW = (minWidth * dpi) / 2;
+                        const halfMinH = (minHeight * dpi) / 2;
+                        selectionBounds.min.x = centerX - halfMinW;
+                        selectionBounds.max.x = centerX + halfMinW;
+                        selectionBounds.min.y = centerY - halfMinH;
+                        selectionBounds.max.y = centerY + halfMinH;
+                        width = minWidth;
+                        height = minHeight;
+                    }
                     screenEl.selectionBounds = selectionBounds;
-                    // Also update screen_size to match object size
-                    const width = (selectionBounds.max.x - selectionBounds.min.x) / (await OBR.scene.grid.getDpi());
-                    const height = (selectionBounds.max.y - selectionBounds.min.y) / (await OBR.scene.grid.getDpi());
+                    // Also update screen_size to match object size (but never smaller than min)
                     await util.setRoomMeta({
                         screen_size: { width, height }
                     });
@@ -1131,8 +1135,25 @@ var util = {
     },
     updateCurrSelectedScreenEl: async function () {
         var new_selection_bounds = await OBR.scene.items.getItemBounds(util.meta.screen_el.items.arrayOfProp("id"))
-        // debugger
-
+        // If Fit to Object is enabled, enforce minimum screen size
+        if (util.meta.fit_to_object && util.meta.screen_size && new_selection_bounds) {
+            var _w = util.meta.screen_size.width;
+            var _h = util.meta.screen_size.height;
+            var dpi = await OBR.scene.grid.getDpi();
+            var min_width = (_w * dpi);
+            var min_height = (_h * dpi);
+            var curr_width = new_selection_bounds.max.x - new_selection_bounds.min.x;
+            var curr_height = new_selection_bounds.max.y - new_selection_bounds.min.y;
+            if (curr_width < min_width || curr_height < min_height) {
+                // Expand bounds to minimum size, centered
+                var centerX = (new_selection_bounds.max.x + new_selection_bounds.min.x) / 2;
+                var centerY = (new_selection_bounds.max.y + new_selection_bounds.min.y) / 2;
+                new_selection_bounds.min.x = centerX - min_width / 2;
+                new_selection_bounds.max.x = centerX + min_width / 2;
+                new_selection_bounds.min.y = centerY - min_height / 2;
+                new_selection_bounds.max.y = centerY + min_height / 2;
+            }
+        }
         await util.setRoomMeta({
             screen_el: {
                 items: util.meta.screen_el.items,
