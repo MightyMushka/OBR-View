@@ -140,8 +140,7 @@ var util = {
         // --- BREAK FOLLOWING ON PLAYER VIEWPORT MOVE ---
         let lastViewport = null;
         OBR.viewport.onChange(async (viewport) => {
-            // Only act if following is enabled and player is the screen user
-            if (!util.meta.screen_follow) return;
+            // Remove follow check: always record player movement
             const playerId = await OBR.player.getId();
             if (util.meta.screen_id && playerId != util.meta.screen_id) return;
             // If player_moved is already true, do nothing
