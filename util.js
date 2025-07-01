@@ -1262,8 +1262,7 @@ var util = {
     },
     updateCurrSelectedScreenEl: async function () {
         var new_selection_bounds = await OBR.scene.items.getItemBounds(util.meta.screen_el.items.arrayOfProp("id"))
-        // Only apply buffer/expand logic if Fit to Object is enabled
-        if (util.meta.fit_to_object && util.meta.screen_size && new_selection_bounds) {
+        if (util.meta.screen_size && new_selection_bounds) {
             var _w = util.meta.screen_size.width;
             var _h = util.meta.screen_size.height;
             var dpi = await OBR.scene.grid.getDpi();
@@ -1276,33 +1275,22 @@ var util = {
             var centerY = (new_selection_bounds.max.y + new_selection_bounds.min.y) / 2;
             var halfW = curr_width / 2;
             var halfH = curr_height / 2;
-            // Add buffer to sides if object is larger than min size
-            if (curr_width / dpi > _w) {
-                halfW += (buffer * dpi) / 2;
+            if (util.meta.fit_to_object) {
+                // Add buffer to sides if object is larger than min size
+                if (curr_width / dpi > _w) {
+                    halfW += (buffer * dpi) / 2;
+                }
+                if (curr_height / dpi > _h) {
+                    halfH += (buffer * dpi) / 2;
+                }
             }
-            if (curr_height / dpi > _h) {
-                halfH += (buffer * dpi) / 2;
+            // Always enforce manual size as minimum, regardless of fit_to_object
+            if (curr_width < min_width) {
+                halfW = min_width / 2;
             }
-            // If object is smaller than min, expand to min size (no buffer)
-            if (curr_width < min_width || curr_height < min_height) {
-                halfW = (Math.max(curr_width, min_width)) / 2;
-                halfH = (Math.max(curr_height, min_height)) / 2;
+            if (curr_height < min_height) {
+                halfH = min_height / 2;
             }
-            new_selection_bounds.min.x = centerX - halfW;
-            new_selection_bounds.max.x = centerX + halfW;
-            new_selection_bounds.min.y = centerY - halfH;
-            new_selection_bounds.max.y = centerY + halfH;
-        } else if (!util.meta.fit_to_object && util.meta.screen_size && new_selection_bounds) {
-            // When Fit to Object is off, always use the manual size, never expand
-            var _w = util.meta.screen_size.width;
-            var _h = util.meta.screen_size.height;
-            var dpi = await OBR.scene.grid.getDpi();
-            var min_width = (_w * dpi);
-            var min_height = (_h * dpi);
-            var centerX = (new_selection_bounds.max.x + new_selection_bounds.min.x) / 2;
-            var centerY = (new_selection_bounds.max.y + new_selection_bounds.min.y) / 2;
-            var halfW = min_width / 2;
-            var halfH = min_height / 2;
             new_selection_bounds.min.x = centerX - halfW;
             new_selection_bounds.max.x = centerX + halfW;
             new_selection_bounds.min.y = centerY - halfH;
