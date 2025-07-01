@@ -659,10 +659,6 @@ var util = {
                 },
             ],
             async onClick(_, elementId) {
-                if (!util.meta.screen_follow) {
-                    await OBR.notification.show("Not following: Player view will not be updated.", "INFO");
-                    return;
-                }
                 // Always get bounds of selected items for selectionBounds
                 let selectionBounds = null;
                 if (_.items && _.items.length > 0) {
@@ -686,6 +682,17 @@ var util = {
                     screen_el: screenEl
                 });
                 await OBR.notification.show("Moving screen to view", "SUCCESS");
+                // If Not Following, immediately set player_moved: true and screen_follow: false
+                if (!util.meta.screen_follow) {
+                    await util.setRoomMeta({
+                        screen_el: {
+                            ...screenEl,
+                            player_moved: true
+                        },
+                        screen_follow: false
+                    });
+                    await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
+                }
             },
         });
         await OBR.contextMenu.create({
@@ -788,10 +795,6 @@ var util = {
                 },
             ],
             async onClick(_, elementId) {
-                if (!util.meta.screen_follow) {
-                    await OBR.notification.show("Not following: Player view will not be updated.", "INFO");
-                    return;
-                }
                 // Always get bounds of selected items for selectionBounds
                 let selectionBounds = null;
                 if (_.items && _.items.length > 0) {
@@ -815,6 +818,17 @@ var util = {
                     screen_el: screenEl
                 });
                 await OBR.notification.show("Moving screen to view", "SUCCESS");
+                // If Not Following, immediately set player_moved: true and screen_follow: false
+                if (!util.meta.screen_follow) {
+                    await util.setRoomMeta({
+                        screen_el: {
+                            ...screenEl,
+                            player_moved: true
+                        },
+                        screen_follow: false
+                    });
+                    await OBR.notification.show("Not following: Player view will not be updated further.", "INFO");
+                }
             },
         });
         await OBR.contextMenu.create({
