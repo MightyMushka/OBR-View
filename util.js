@@ -711,25 +711,37 @@ var util = {
                 const fitToObject = util.meta?.fit_to_object;
                 let screenEl = { ..._ };
                 if (fitToObject && selectionBounds) {
-                    // Enforce minimum screen size
+                    // Enforce minimum screen size and add buffer if object is larger
                     const dpi = await OBR.scene.grid.getDpi();
                     let width = (selectionBounds.max.x - selectionBounds.min.x) / dpi;
                     let height = (selectionBounds.max.y - selectionBounds.min.y) / dpi;
                     let minWidth = util.meta?.screen_size?.width || 0;
                     let minHeight = util.meta?.screen_size?.height || 0;
-                    if (width < minWidth || height < minHeight) {
-                        // Expand bounds to minimum size, centered
-                        const centerX = (selectionBounds.max.x + selectionBounds.min.x) / 2;
-                        const centerY = (selectionBounds.max.y + selectionBounds.min.y) / 2;
-                        const halfMinW = (minWidth * dpi) / 2;
-                        const halfMinH = (minHeight * dpi) / 2;
-                        selectionBounds.min.x = centerX - halfMinW;
-                        selectionBounds.max.x = centerX + halfMinW;
-                        selectionBounds.min.y = centerY - halfMinH;
-                        selectionBounds.max.y = centerY + halfMinH;
-                        width = minWidth;
-                        height = minHeight;
+                    let buffer = 2; // buffer in grid units
+                    let centerX = (selectionBounds.max.x + selectionBounds.min.x) / 2;
+                    let centerY = (selectionBounds.max.y + selectionBounds.min.y) / 2;
+                    let halfW = (width * dpi) / 2;
+                    let halfH = (height * dpi) / 2;
+                    // Add buffer to sides if object is larger than min size
+                    if (width > minWidth) {
+                        halfW += (buffer * dpi) / 2;
+                        width += buffer;
                     }
+                    if (height > minHeight) {
+                        halfH += (buffer * dpi) / 2;
+                        height += buffer;
+                    }
+                    // If object is smaller than min, expand to min size (no buffer)
+                    if (width < minWidth || height < minHeight) {
+                        halfW = (Math.max(width, minWidth) * dpi) / 2;
+                        halfH = (Math.max(height, minHeight) * dpi) / 2;
+                        width = Math.max(width, minWidth);
+                        height = Math.max(height, minHeight);
+                    }
+                    selectionBounds.min.x = centerX - halfW;
+                    selectionBounds.max.x = centerX + halfW;
+                    selectionBounds.min.y = centerY - halfH;
+                    selectionBounds.max.y = centerY + halfH;
                     screenEl.selectionBounds = selectionBounds;
                     // Also update screen_size to match object size (but never smaller than min)
                     await util.setRoomMeta({
@@ -865,25 +877,37 @@ var util = {
                 const fitToObject = util.meta?.fit_to_object;
                 let screenEl = { ..._ };
                 if (fitToObject && selectionBounds) {
-                    // Enforce minimum screen size
+                    // Enforce minimum screen size and add buffer if object is larger
                     const dpi = await OBR.scene.grid.getDpi();
                     let width = (selectionBounds.max.x - selectionBounds.min.x) / dpi;
                     let height = (selectionBounds.max.y - selectionBounds.min.y) / dpi;
                     let minWidth = util.meta?.screen_size?.width || 0;
                     let minHeight = util.meta?.screen_size?.height || 0;
-                    if (width < minWidth || height < minHeight) {
-                        // Expand bounds to minimum size, centered
-                        const centerX = (selectionBounds.max.x + selectionBounds.min.x) / 2;
-                        const centerY = (selectionBounds.max.y + selectionBounds.min.y) / 2;
-                        const halfMinW = (minWidth * dpi) / 2;
-                        const halfMinH = (minHeight * dpi) / 2;
-                        selectionBounds.min.x = centerX - halfMinW;
-                        selectionBounds.max.x = centerX + halfMinW;
-                        selectionBounds.min.y = centerY - halfMinH;
-                        selectionBounds.max.y = centerY + halfMinH;
-                        width = minWidth;
-                        height = minHeight;
+                    let buffer = 2; // buffer in grid units
+                    let centerX = (selectionBounds.max.x + selectionBounds.min.x) / 2;
+                    let centerY = (selectionBounds.max.y + selectionBounds.min.y) / 2;
+                    let halfW = (width * dpi) / 2;
+                    let halfH = (height * dpi) / 2;
+                    // Add buffer to sides if object is larger than min size
+                    if (width > minWidth) {
+                        halfW += (buffer * dpi) / 2;
+                        width += buffer;
                     }
+                    if (height > minHeight) {
+                        halfH += (buffer * dpi) / 2;
+                        height += buffer;
+                    }
+                    // If object is smaller than min, expand to min size (no buffer)
+                    if (width < minWidth || height < minHeight) {
+                        halfW = (Math.max(width, minWidth) * dpi) / 2;
+                        halfH = (Math.max(height, minHeight) * dpi) / 2;
+                        width = Math.max(width, minWidth);
+                        height = Math.max(height, minHeight);
+                    }
+                    selectionBounds.min.x = centerX - halfW;
+                    selectionBounds.max.x = centerX + halfW;
+                    selectionBounds.min.y = centerY - halfH;
+                    selectionBounds.max.y = centerY + halfH;
                     screenEl.selectionBounds = selectionBounds;
                     // Also update screen_size to match object size (but never smaller than min)
                     await util.setRoomMeta({
@@ -1146,7 +1170,7 @@ var util = {
     },
     updateCurrSelectedScreenEl: async function () {
         var new_selection_bounds = await OBR.scene.items.getItemBounds(util.meta.screen_el.items.arrayOfProp("id"))
-        // If Fit to Object is enabled, enforce minimum screen size
+        // If Fit to Object is enabled, enforce minimum screen size and add buffer
         if (util.meta.fit_to_object && util.meta.screen_size && new_selection_bounds) {
             var _w = util.meta.screen_size.width;
             var _h = util.meta.screen_size.height;
@@ -1155,15 +1179,27 @@ var util = {
             var min_height = (_h * dpi);
             var curr_width = new_selection_bounds.max.x - new_selection_bounds.min.x;
             var curr_height = new_selection_bounds.max.y - new_selection_bounds.min.y;
-            if (curr_width < min_width || curr_height < min_height) {
-                // Expand bounds to minimum size, centered
-                var centerX = (new_selection_bounds.max.x + new_selection_bounds.min.x) / 2;
-                var centerY = (new_selection_bounds.max.y + new_selection_bounds.min.y) / 2;
-                new_selection_bounds.min.x = centerX - min_width / 2;
-                new_selection_bounds.max.x = centerX + min_width / 2;
-                new_selection_bounds.min.y = centerY - min_height / 2;
-                new_selection_bounds.max.y = centerY + min_height / 2;
+            var buffer = 2; // buffer in grid units
+            var centerX = (new_selection_bounds.max.x + new_selection_bounds.min.x) / 2;
+            var centerY = (new_selection_bounds.max.y + new_selection_bounds.min.y) / 2;
+            var halfW = curr_width / 2;
+            var halfH = curr_height / 2;
+            // Add buffer to sides if object is larger than min size
+            if (curr_width / dpi > _w) {
+                halfW += (buffer * dpi) / 2;
             }
+            if (curr_height / dpi > _h) {
+                halfH += (buffer * dpi) / 2;
+            }
+            // If object is smaller than min, expand to min size (no buffer)
+            if (curr_width < min_width || curr_height < min_height) {
+                halfW = (Math.max(curr_width, min_width)) / 2;
+                halfH = (Math.max(curr_height, min_height)) / 2;
+            }
+            new_selection_bounds.min.x = centerX - halfW;
+            new_selection_bounds.max.x = centerX + halfW;
+            new_selection_bounds.min.y = centerY - halfH;
+            new_selection_bounds.max.y = centerY + halfH;
         }
         await util.setRoomMeta({
             screen_el: {
