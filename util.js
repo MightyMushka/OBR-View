@@ -1241,7 +1241,7 @@ var util = {
 
         $(document).on("click", "#scenelist button, #scenelist button span", async function (e) {
             var id = $(e.target).attr("id") || $(e.target).parents("button").attr("id");
-            if (!id) return
+            if (!id) return;
 
             console.log(`selected scene ${id} as screen`)
 
@@ -1249,14 +1249,46 @@ var util = {
             const sceneObj = util.meta.scenes.find((a) => a.id == id);
             if (!sceneObj) return;
 
+            // --- PATCH: Enforce minimum size and buffer logic when Fit to Object is enabled ---
+            let screenEl = { ...sceneObj._ };
+            if (util.meta.fit_to_object && util.meta.screen_size && screenEl.items) {
+                // Get bounds of the items in the scene
+                let selectionBounds = await OBR.scene.items.getItemBounds(screenEl.items.arrayOfProp("id"));
+                if (selectionBounds) {
+                    const dpi = await OBR.scene.grid.getDpi();
+                    const minWidth = util.meta.screen_size.width * dpi;
+                    const minHeight = util.meta.screen_size.height * dpi;
+                    const currWidth = selectionBounds.max.x - selectionBounds.min.x;
+                    const currHeight = selectionBounds.max.y - selectionBounds.min.y;
+                    const buffer = util.bufferEnabled ? 2 : 0;
+                    const centerX = (selectionBounds.max.x + selectionBounds.min.x) / 2;
+                    const centerY = (selectionBounds.max.y + selectionBounds.min.y) / 2;
+                    let fitWidth = Math.max(currWidth, minWidth);
+                    let fitHeight = Math.max(currHeight, minHeight);
+
+                    // Only add buffer if bufferEnabled and object is larger than min
+                    if (buffer && currWidth > minWidth) fitWidth += buffer * dpi;
+                    if (buffer && currHeight > minHeight) fitHeight += buffer * dpi;
+
+                    selectionBounds.min.x = centerX - fitWidth / 2;
+                    selectionBounds.max.x = centerX + fitWidth / 2;
+                    selectionBounds.min.y = centerY - fitHeight / 2;
+                    selectionBounds.max.y = centerY + fitHeight / 2;
+
+                    screenEl.selectionBounds = selectionBounds;
+                }
+            } else {
+                delete screenEl.selectionBounds;
+            }
+
             // Mimic the 'Follow' button logic for scene selection
             await util.setRoomMeta({
                 screen_follow: true,
-                screen_el: { ...sceneObj._, player_moved: false, force_update: true }
+                screen_el: { ...screenEl, player_moved: false, force_update: true }
             });
             await util.checkFollow();
             setTimeout(async () => {
-                await util.setRoomMeta({ screen_follow: false, screen_el: { ...sceneObj._, player_moved: true, force_update: false } });
+                await util.setRoomMeta({ screen_follow: false, screen_el: { ...screenEl, player_moved: true, force_update: false } });
                 await util.checkFollow();
                 util.notify("Not following: Player view will not be updated further.", "INFO");
             }, 2000);
