@@ -530,67 +530,86 @@ var util = {
             updatePos();
             return;
         }
-        // setup controlPanel
-        // btns:
-        // start/stop - follow of boundingbox
-        // refresh position
-        // remove user as screen
-        // move to specific x,y
-        $("#container").append(`<div id="screen_control">
-            <h3>Screen Control</h3>
-            ${(!util.inited.screen_size_set ? `<div class="warning" id="screen_size_set">Input the size for the screen presentator</div>` : "")}
-            <table class="screen_wrap>
-                <tr class="screen_inp_wrap">
-                    <td colspan=3>
-                    <label for="selector">Screensizes: </label><br>
-                        <div class=custom-select>
-                            <select id="selector" class="screen_select">
-                                <option value="0">Manual</option>
-                                <option value="24">24" (20.9 x 11.7)</option>
-                                <option value="27">27" (23.5 x 13.2)</option>
-                                <option value="32">32" (25.6 x 19.2)</option>
-                                <option value="40">40" (32.0 x 24.0)</option>
-                                <option value="43">43" (34.4 x 25.8)</option>
-                                <option value="48">48" (38.4 x 28.8)</option>
-                                <option value="50">50" (40.0 x 30.0)</option>
-                                <option value="55">55" (44.0 x 33.0)</option>
-                                <option value="60">60" (48.0 x 36.0)</option>
-                                <option value="65">65" (52.0 x 39.0)</option>
-                                <option value="70">70" (56.0 x 42.0)</option>
-                                <option value="75">75" (60.0 x 45.0)</option>
-                                <option value="80">80" (64.0 x 48.0)</option>
-                                <option value="85">85" (68.0 x 51.0)</option>
-                            </select>
-                        </div>
-                    </td>
-                </tr>
-                <tr class="screen_inp_wrap">
-                    <td><label for="width">Width: </label></td>
-                    <td><input class="screen_size" id="width" placeholder="0.00" value="${util.meta?.screen_size?.width || ""}"/></td>
 
-                    <td rowspan=2><button id="switch_wh">▴▾</button></td>
-                </tr>
-                <tr class="screen_inp_wrap">
-                    <td><label for="height">Height: </label></td>
-                    <td><input class="screen_size" id="height" placeholder="0.00" value="${util.meta?.screen_size?.height || ""}" /></td>
-                </tr>
-            </table>
-            <button id="toggle_follow" class="following">Follow</button>
-            <button id="refresh_pos" class="">Refresh</button><br>
-            <!-- <button id="rm_screenuser" class="red">Remove</button> -->
-            <label style="margin-top:8px;display:inline-block;">
-                <input type="checkbox" id="fit_to_object" ${util.meta?.fit_to_object ? "checked" : ""}/> Fit to Object
-            </label>
-            <br>
-            <label style="margin-top:8px;display:inline-block;">
-                <input type="checkbox" id="show_notifications" ${util.notificationsEnabled ? "checked" : ""}/> Show Notifications
-            </label>
-            <br>
-            <label style="margin-top:8px;display:inline-block;">
-                <input type="checkbox" id="enable_buffer" ${util.bufferEnabled ? "checked" : ""}/> Enable Buffer for Sizing
-            </label>
-            <hr>
-        </div>`)
+        // --- REVISED CONTROL PANEL LAYOUT ---
+        $("#container").append(`
+            <div id="screen_control">
+                <h3>Screen Control</h3>
+                <div style="margin-bottom:10px;">
+                    <button id="toggle_follow" class="following">Follow</button>
+                    <button id="refresh_pos">Refresh</button>
+                    <span style="display:inline-block;margin-left:12px;">
+                        <label style="margin-right:8px;">
+                            <input type="checkbox" id="fit_to_object" ${util.meta?.fit_to_object ? "checked" : ""}/> Fit to Object
+                        </label>
+                        <label>
+                            <input type="checkbox" id="enable_buffer" ${util.bufferEnabled ? "checked" : ""}/> Size Buffer
+                        </label>
+                    </span>
+                </div>
+                <div id="scene_control_placeholder"></div>
+                <hr>
+                <div id="screen_size_controls">
+                    ${(!util.inited.screen_size_set ? `<div class="warning" id="screen_size_set">Input the size for the screen presentator</div>` : "")}
+                    <table class="screen_wrap">
+                        <tr class="screen_inp_wrap">
+                            <td colspan=3>
+                            <label for="selector">Screensizes: </label><br>
+                                <div class=custom-select>
+                                    <select id="selector" class="screen_select">
+                                        <option value="0">Manual</option>
+                                        <option value="24">24" (20.9 x 11.7)</option>
+                                        <option value="27">27" (23.5 x 13.2)</option>
+                                        <option value="32">32" (25.6 x 19.2)</option>
+                                        <option value="40">40" (32.0 x 24.0)</option>
+                                        <option value="43">43" (34.4 x 25.8)</option>
+                                        <option value="48">48" (38.4 x 28.8)</option>
+                                        <option value="50">50" (40.0 x 30.0)</option>
+                                        <option value="55">55" (44.0 x 33.0)</option>
+                                        <option value="60">60" (48.0 x 36.0)</option>
+                                        <option value="65">65" (52.0 x 39.0)</option>
+                                        <option value="70">70" (56.0 x 42.0)</option>
+                                        <option value="75">75" (60.0 x 45.0)</option>
+                                        <option value="80">80" (64.0 x 48.0)</option>
+                                        <option value="85">85" (68.0 x 51.0)</option>
+                                    </select>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="screen_inp_wrap">
+                            <td><label for="width">Width: </label></td>
+                            <td><input class="screen_size" id="width" placeholder="0.00" value="${util.meta?.screen_size?.width || ""}"/></td>
+                            <td rowspan=2><button id="switch_wh">▴▾</button></td>
+                        </tr>
+                        <tr class="screen_inp_wrap">
+                            <td><label for="height">Height: </label></td>
+                            <td><input class="screen_size" id="height" placeholder="0.00" value="${util.meta?.screen_size?.height || ""}" /></td>
+                        </tr>
+                    </table>
+                </div>
+                <hr>
+                <div id="playerlist_cont_placeholder"></div>
+                <div id="presentation_tools_placeholder"></div>
+                <hr>
+                <label style="margin-top:8px;display:inline-block;">
+                    <input type="checkbox" id="show_notifications" /> Show Notifications
+                </label>
+            </div>
+        `);
+
+        // Move scenes UI into the placeholder
+        $("#scene_control").detach().appendTo("#scene_control_placeholder");
+        // Move player list UI into the placeholder
+        $("#playerlist_cont").detach().appendTo("#playerlist_cont_placeholder");
+        // Move presentation tools UI into the placeholder if present
+        $("#present_tool").detach().appendTo("#presentation_tools_placeholder");
+
+        // Set notificationsEnabled to false by default
+        util.notificationsEnabled = false;
+        // Set the checkbox state to unchecked
+        $("#show_notifications").prop("checked", false);
+
+        // --- Event Listeners (unchanged, but update selector for buffer) ---
         $(document).on("change", "#screen_control select#selector", async function (evt) {
             var value = this.value
             var screensizes = {
@@ -647,6 +666,50 @@ var util = {
                 await saveSizes()
             }, 300)
         })
+        // Fit to Object
+        $(document).on("change", "#fit_to_object", async function (evt) {
+            const fitToObject = $(this).is(":checked");
+            if (fitToObject) {
+                // Save the last manual screen size before switching to Fit to Object
+                if (util.meta.screen_size) {
+                    util.lastManualScreenSize = { ...util.meta.screen_size };
+                }
+            }
+            // Only update if following is enabled and not in sync2view_in_progress
+            if (util.meta.screen_follow && !util.meta.sync2view_in_progress) {
+                await util.setRoomMeta({
+                    fit_to_object: fitToObject
+                });
+                util.notify("'Fit to Object' setting updated", "SUCCESS");
+                // Optionally update the current selected screen element if needed
+                await util.updateCurrSelectedScreenEl();
+            } else {
+                await util.setRoomMeta({ fit_to_object: fitToObject });
+                util.notify("'Fit to Object' setting updated (no view update, Not Following)", "INFO");
+            }
+            // If unticked, restore Width/Height fields to last manual screen size if available
+            if (!fitToObject) {
+                let restore = util.lastManualScreenSize || util.meta.screen_size;
+                if (restore) {
+                    $("#width").val(restore.width);
+                    $("#height").val(restore.height);
+                    // Optionally restore screen_size in meta as well
+                    await util.setRoomMeta({ screen_size: restore });
+                    // Recalculate and update selectionBounds to match manual size
+                    if (util.meta.screen_follow && util.meta.screen_el) {
+                        await util.updateCurrSelectedScreenEl();
+                    }
+                }
+            }
+        });
+        // Size Buffer (was Enable Buffer for Sizing)
+        $(document).on("change", "#enable_buffer", function () {
+            util.bufferEnabled = $(this).is(":checked");
+        });
+        // Add event listener for Show Notifications checkbox
+        $(document).on("change", "#show_notifications", function () {
+            util.notificationsEnabled = $(this).is(":checked");
+        });
 
         // Add event listener for Fit to Object checkbox
         $(document).on("change", "#fit_to_object", async function (evt) {
@@ -686,11 +749,7 @@ var util = {
         });
 
 
-        // Add event listener for Show Notifications checkbox
-        $(document).on("change", "#show_notifications", function () {
-            util.notificationsEnabled = $(this).is(":checked");
-        });
-        // Add event listener for Enable Buffer for Sizing checkbox
+        // Add event listener for Size Buffer checkbox
         $(document).on("change", "#enable_buffer", function () {
             util.bufferEnabled = $(this).is(":checked");
         });
