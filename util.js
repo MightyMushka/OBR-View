@@ -550,7 +550,7 @@ var util = {
                 <div id="scene_control_placeholder"></div>
                 <hr>
                 <div id="screen_size_controls">
-                    ${(!util.inited.screen_size_set ? `<div class="warning" id="screen_size_set">Input the size for the screen presentator</div>` : "")}
+                    ${(!util.inited.screen_size_set ? `<div class=\"warning\" id=\"screen_size_set\">Input the size for the screen presentator</div>` : "")}
                     <table class="screen_wrap">
                         <tr class="screen_inp_wrap">
                             <td colspan=3>
@@ -589,19 +589,19 @@ var util = {
                 </div>
                 <hr>
                 <div id="playerlist_cont_placeholder"></div>
-                <div id="presentation_tools_placeholder"></div>
                 <hr>
                 <label style="margin-top:8px;display:inline-block;">
                     <input type="checkbox" id="show_notifications" /> Show Notifications
                 </label>
+                <div id="presentation_tools_placeholder" style="margin-top:16px;"></div>
             </div>
         `);
 
-        // Move scenes UI into the placeholder
-        $("#scene_control").detach().appendTo("#scene_control_placeholder");
+        // Move scenes UI into the placeholder (now right after fit/buffer)
+        $("#scene_control").detach().insertAfter($("#screen_control > div").eq(0));
         // Move player list UI into the placeholder
         $("#playerlist_cont").detach().appendTo("#playerlist_cont_placeholder");
-        // Move presentation tools UI into the placeholder if present
+        // Move presentation tools UI into the placeholder at the end
         $("#present_tool").detach().appendTo("#presentation_tools_placeholder");
 
         // Set notificationsEnabled to false by default
