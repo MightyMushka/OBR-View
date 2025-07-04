@@ -103,16 +103,16 @@ var util = {
             return
         }
         
-        if (!util.inited.presentation_enabled && typeof PresentationRequest != "undefined") {
-            $("#container").append(`<div class="warning" id="presentation_enabled">Input the url for the screen presentator</div>`)
-
-            try {
-                // 0 - setup presentation tools
-                await util.setupPresentationTools()
-            } catch (error) {
-                console.error("Error setting up presentation tools", error)
-            }
-        }
+        // if (!util.inited.presentation_enabled && typeof PresentationRequest != "undefined") {
+        //     $("#container").append(`<div class="warning" id="presentation_enabled">Input the url for the screen presentator</div>`)
+        //
+        //     try {
+        //         // 0 - setup presentation tools
+        //         await util.setupPresentationTools()
+        //     } catch (error) {
+        //         console.error("Error setting up presentation tools", error)
+        //     }
+        // }
 
         // if (!util.inited.screen_user_selected) $("#container").append(`<div class="warning" id="screen_user_selected">Select a user to use as screen presentator</div>`)
 
@@ -171,246 +171,246 @@ var util = {
 
         return false
     },
-    setupPresentationTools: async function () {
-        $("#container").append(`
-        <div id="present_tool">
-            <span id="nonAvailWarn" style="display: none;">No presentation displays available.</span>
-
-            <div id="presUrl" style="display: none;">
-                <input id="urlInput" type="text" placeholder="A7W0upefDl8r/TheMysticMirror">
-                <button id="urlBtn">Save</button>
-            </div>
-
-            <button id="presentBtn" style="display: none;">Present</button>
-
-            <button id="reconnectBtn" style="display: none;">Reconnect</button>
-
-            <button id="disconnectBtn" style="display: none;">Disconnect</button>
-            <button id="stopBtn" style="display: none;">Stop</button>
-        </div>
-        `)
-
-        const presUrls = [
-            util.meta?.presUrl || "/",
-            //     "https://www.owlbear.app/room/nUdv0VTqmoDJ/TheHuffySilly"
-            //     "https://tracelink.dk/"
-            //     "presentation.html",
-            //     "alternate.html",
-        ];
-
-        const nonAvailWarn = document.getElementById("nonAvailWarn");
-        const urlInput = document.getElementById("urlInput");
-        const urlBtn = document.getElementById("urlBtn");
-        const presUrl = document.getElementById("presUrl");
-
-        // Monitor availability of presentation displays
-        const presentBtn = document.getElementById("presentBtn");
-        // The Disconnect and Stop buttons are visible if there is a connected presentation
-        const stopBtn = document.querySelector("#stopBtn");
-        const reconnectBtn = document.querySelector("#reconnectBtn");
-        const disconnectBtn = document.querySelector("#disconnectBtn");
-
-        var request;
-        let connection;
-        util.inited.presentation_enabled = false;
-
-        // Show or hide present button depending on display availability
-        const handleAvailabilityChange = (available) => {
-            if (!util.inited.presentation_enabled) {
-                urlInput.style.display = available ? "inline" : "none";
-                urlBtn.style.display = available ? "inline" : "none";
-            }
-            nonAvailWarn.style.display = available ? "none" : "inline";
-
-            presUrl.style.display = available ? "inline" : "none";
-        };
-
-        urlBtn.onclick = async () => {
-            // check if input is XXXYYY/NameOfTheRoom
-            if (urlInput.value == "" || urlInput.value.match(/^[A-z|0-9]*\/[A-z]*$/)) {
-                // add preffix
-                urlInput.value = "https://www.owlbear.app/room/" + urlInput.value
-            }
-            
-            // check if url is owlbear\.rodeo
-            if (urlInput.value == "" || urlInput.value.match(/owlbear\.rodeo/))
-                urlInput.value = urlInput.value.replace("owlbear.rodeo", "owlbear.app")
-
-            // check if urlInput is valid url
-            if (urlInput.value == "" || !urlInput.value.match(/http(s)?:\/\/(www\.)?owlbear\.app\/room\/.*\/.*/)) {
-                var err_str = "Please input a valid URL for the room."
-                util.notify(err_str, "ERROR") // patched: use util.notify
-                return
-            }
-
-            urlInput.value = urlInput.value + "?name=Mystic+Mirror&join=true&presentation=true"
-
-            await util.setRoomMeta({ "presUrl": urlInput.value })
-
-            presUrls.pop()
-            presUrls.push(urlInput.value);
-            checkAvailability()
-
-            enablePresentation();
-        }
-
-        // Promise is resolved as soon as the presentation display availability is known.
-        const checkAvailability = () => {
-            request = new PresentationRequest(presUrls);
-            request
-                .getAvailability()
-                .then((availability) => {
-                    handleAvailabilityChange(availability.value);
-                    availability.onchange = () => {
-                        handleAvailabilityChange(availability.value);
-                    };
-                })
-                .catch(() => {
-                    handleAvailabilityChange(true);
-                });
-        }
-
-        checkAvailability()
-
-        if (typeof util.meta?.presUrl != "undefined") {
-            enablePresentation()
-        }
-
-        // Starting a new presentation
-        presentBtn.onclick = () => {
-            //     const presId = util.meta?.presId || null;
-
-            //     if (presId) {
-            //         request
-            //             .reconnect(presId)
-            //             // The new connection to the presentation will be passed to
-            //             // setConnection on success.
-            //             .then(setConnection);
-            //         // No connection found for presUrl and presId, or an error occurred.
-            //     } else {
-            // Start new presentation.
-            request
-                .start()
-                .then(setConnection);
-            //     }
-        };
-        // ---
-
-        async function enablePresentation() {
-            urlInput.style.display = "none";
-            urlBtn.style.display = "none";
-            presUrl.style.display = "none";
-            presentBtn.style.display = "inline";
-            $("#presentation_enabled").remove()
-            util.inited.presentation_enabled = true
-
-            // Reconnect to a presentation --
-            const reconnect = () => {
-                // read presId from util.meta if exists
-                // const presId = localStorage["presId"];
-                const presId = util.meta?.presId || null;
-                // presId is mandatory when reconnecting to a presentation.
-                if (presId) {
-                    request
-                        .reconnect(presId)
-                        // The new connection to the presentation will be passed to
-                        // setConnection on success.
-                        .then(setConnection);
-                    // No connection found for presUrl and presId, or an error occurred.
-                }
-            };
-            // On navigation of the controller, reconnect automatically.
-            document.addEventListener("DOMContentLoaded", reconnect);
-            // Or allow manual reconnection.
-            reconnectBtn.onclick = reconnect
-
-            reconnect()
-            // -- Reconnect to a presentation
-
-            // Presentation initiation by the controlling UA
-            navigator.presentation.defaultRequest = new PresentationRequest(presUrls);
-            navigator.presentation.defaultRequest.onconnectionavailable = (evt) => {
-                setConnection(evt.connection);
-            };
-
-
-            stopBtn.onclick = () => {
-                connection?.terminate();
-            };
-
-            disconnectBtn.onclick = () => {
-                connection?.close();
-            };
-
-        }
-        async function setConnection(newConnection) {
-            // Disconnect from existing presentation, if not attempting to reconnect
-            if (
-                connection &&
-                connection !== newConnection &&
-                connection.state !== "closed"
-            ) {
-                connection.onclose = undefined;
-                connection.close();
-            }
-
-            // Set the new connection and save the presentation ID
-            connection = newConnection;
-            //     localStorage["presId"] = connection.id;
-            await util.setRoomMeta({ presId: connection.id });
-
-            function showConnectedUI() {
-                // Allow the user to disconnect from or terminate the presentation
-                stopBtn.style.display = "inline";
-                disconnectBtn.style.display = "inline";
-                reconnectBtn.style.display = "none";
-                presentBtn.style.display = "none";
-            }
-
-            function showDisconnectedUI() {
-                disconnectBtn.style.display = "none";
-                stopBtn.style.display = "none";
-                reconnectBtn.style.display = util.meta?.presId ? "inline" : "none";
-                presentBtn.style.display = util.meta?.presId ? "inline" : "none";
-                // reconnectBtn.style.display = localStorage["presId"] ? "inline" : "none";
-            }
-
-            // Monitor the connection state
-            connection.onconnect = () => {
-                showConnectedUI();
-
-                // Register message handler
-                connection.onmessage = (message) => {
-                    console.log(`Received message: ${message.data}`);
-                };
-
-                // Send initial message to presentation page
-                connection.send("Say hello");
-            };
-
-            //     if already connected, show connected UI
-            if (connection.state === "connected")
-                connection.onconnect()
-
-            connection.onclose = () => {
-                connection = null;
-                showDisconnectedUI();
-            };
-
-            connection.onterminate = async () => {
-                // Remove presId from localStorage if exists
-                // delete localStorage["presId"];
-                await util.setRoomMeta({ presId: null });
-
-                connection = null;
-                showDisconnectedUI();
-            };
-        }
-        //   connection.send('{"string": "你好，世界!", "lang": "zh-CN"}');
-        //   connection.send('{"string": "こんにちは、世界!", "lang": "ja"}');
-        //   connection.send('{"string": "안녕하세요, 세계!", "lang": "ko"}');
-        //   connection.send('{"string": "Hello, world!", "lang": "en-US"}');
-    },
+    // setupPresentationTools: async function () {
+    //     $("#container").append(`
+    //     <div id="present_tool">
+    //         <span id="nonAvailWarn" style="display: none;">No presentation displays available.</span>
+    //
+    //         <div id="presUrl" style="display: none;">
+    //             <input id="urlInput" type="text" placeholder="A7W0upefDl8r/TheMysticMirror">
+    //             <button id="urlBtn">Save</button>
+    //         </div>
+    //
+    //         <button id="presentBtn" style="display: none;">Present</button>
+    //
+    //         <button id="reconnectBtn" style="display: none;">Reconnect</button>
+    //
+    //         <button id="disconnectBtn" style="display: none;">Disconnect</button>
+    //         <button id="stopBtn" style="display: none;">Stop</button>
+    //     </div>
+    //     `)
+    //
+    //     const presUrls = [
+    //         util.meta?.presUrl || "/",
+    //         //     "https://www.owlbear.app/room/nUdv0VTqmoDJ/TheHuffySilly"
+    //         //     "https://tracelink.dk/"
+    //         //     "presentation.html",
+    //         //     "alternate.html",
+    //     ];
+    //
+    //     const nonAvailWarn = document.getElementById("nonAvailWarn");
+    //     const urlInput = document.getElementById("urlInput");
+    //     const urlBtn = document.getElementById("urlBtn");
+    //     const presUrl = document.getElementById("presUrl");
+    //
+    //     // Monitor availability of presentation displays
+    //     const presentBtn = document.getElementById("presentBtn");
+    //     // The Disconnect and Stop buttons are visible if there is a connected presentation
+    //     const stopBtn = document.querySelector("#stopBtn");
+    //     const reconnectBtn = document.querySelector("#reconnectBtn");
+    //     const disconnectBtn = document.querySelector("#disconnectBtn");
+    //
+    //     var request;
+    //     let connection;
+    //     util.inited.presentation_enabled = false;
+    //
+    //     // Show or hide present button depending on display availability
+    //     const handleAvailabilityChange = (available) => {
+    //         if (!util.inited.presentation_enabled) {
+    //             urlInput.style.display = available ? "inline" : "none";
+    //             urlBtn.style.display = available ? "inline" : "none";
+    //         }
+    //         nonAvailWarn.style.display = available ? "none" : "inline";
+    //
+    //         presUrl.style.display = available ? "inline" : "none";
+    //     };
+    //
+    //     urlBtn.onclick = async () => {
+    //         // check if input is XXXYYY/NameOfTheRoom
+    //         if (urlInput.value == "" || urlInput.value.match(/^[A-z|0-9]*\/[A-z]*$/)) {
+    //             // add preffix
+    //             urlInput.value = "https://www.owlbear.app/room/" + urlInput.value
+    //         }
+    //         
+    //         // check if url is owlbear\.rodeo
+    //         if (urlInput.value == "" || urlInput.value.match(/owlbear\.rodeo/))
+    //             urlInput.value = urlInput.value.replace("owlbear.rodeo", "owlbear.app")
+    //
+    //         // check if urlInput is valid url
+    //         if (urlInput.value == "" || !urlInput.value.match(/http(s)?:\/\/(www\.)?owlbear\.app\/room\/.*\/.*/)) {
+    //             var err_str = "Please input a valid URL for the room."
+    //             util.notify(err_str, "ERROR") // patched: use util.notify
+    //             return
+    //         }
+    //
+    //         urlInput.value = urlInput.value + "?name=Mystic+Mirror&join=true&presentation=true"
+    //
+    //         await util.setRoomMeta({ "presUrl": urlInput.value })
+    //
+    //         presUrls.pop()
+    //         presUrls.push(urlInput.value);
+    //         checkAvailability()
+    //
+    //         enablePresentation();
+    //     }
+    //
+    //     // Promise is resolved as soon as the presentation display availability is known.
+    //     const checkAvailability = () => {
+    //         request = new PresentationRequest(presUrls);
+    //         request
+    //             .getAvailability()
+    //             .then((availability) => {
+    //                 handleAvailabilityChange(availability.value);
+    //                 availability.onchange = () => {
+    //                     handleAvailabilityChange(availability.value);
+    //                 };
+    //             })
+    //             .catch(() => {
+    //                 handleAvailabilityChange(true);
+    //             });
+    //     }
+    //
+    //     checkAvailability()
+    //
+    //     if (typeof util.meta?.presUrl != "undefined") {
+    //         enablePresentation()
+    //     }
+    //
+    //     // Starting a new presentation
+    //     presentBtn.onclick = () => {
+    //         //     const presId = util.meta?.presId || null;
+    //
+    //         //     if (presId) {
+    //         //         request
+    //         //             .reconnect(presId)
+    //         //             // The new connection to the presentation will be passed to
+    //         //             // setConnection on success.
+    //         //             .then(setConnection);
+    //         //         // No connection found for presUrl and presId, or an error occurred.
+    //         //     } else {
+    //             // Start new presentation.
+    //             request
+    //                 .start()
+    //                 .then(setConnection);
+    //             //     }
+    //         };
+    //         // ---
+    //
+    //         async function enablePresentation() {
+    //             urlInput.style.display = "none";
+    //             urlBtn.style.display = "none";
+    //             presUrl.style.display = "none";
+    //             presentBtn.style.display = "inline";
+    //             $("#presentation_enabled").remove()
+    //             util.inited.presentation_enabled = true
+    //
+    //             // Reconnect to a presentation --
+    //             const reconnect = () => {
+    //                 // read presId from util.meta if exists
+    //                 // const presId = localStorage["presId"];
+    //                 const presId = util.meta?.presId || null;
+    //                 // presId is mandatory when reconnecting to a presentation.
+    //                 if (presId) {
+    //                     request
+    //                         .reconnect(presId)
+    //                         // The new connection to the presentation will be passed to
+    //                         // setConnection on success.
+    //                         .then(setConnection);
+    //                     // No connection found for presUrl and presId, or an error occurred.
+    //                 }
+    //             };
+    //             // On navigation of the controller, reconnect automatically.
+    //             document.addEventListener("DOMContentLoaded", reconnect);
+    //             // Or allow manual reconnection.
+    //             reconnectBtn.onclick = reconnect
+    //
+    //             reconnect()
+    //             // -- Reconnect to a presentation
+    //
+    //             // Presentation initiation by the controlling UA
+    //             navigator.presentation.defaultRequest = new PresentationRequest(presUrls);
+    //             navigator.presentation.defaultRequest.onconnectionavailable = (evt) => {
+    //                 setConnection(evt.connection);
+    //             };
+    //
+    //
+    //             stopBtn.onclick = () => {
+    //                 connection?.terminate();
+    //             };
+    //
+    //             disconnectBtn.onclick = () => {
+    //                 connection?.close();
+    //             };
+    //
+    //         }
+    //         async function setConnection(newConnection) {
+    //             // Disconnect from existing presentation, if not attempting to reconnect
+    //             if (
+    //                 connection &&
+    //                 connection !== newConnection &&
+    //                 connection.state !== "closed"
+    //             ) {
+    //                 connection.onclose = undefined;
+    //                 connection.close();
+    //             }
+    //
+    //             // Set the new connection and save the presentation ID
+    //             connection = newConnection;
+    //             //     localStorage["presId"] = connection.id;
+    //             await util.setRoomMeta({ presId: connection.id });
+    //
+    //             function showConnectedUI() {
+    //                 // Allow the user to disconnect from or terminate the presentation
+    //                 stopBtn.style.display = "inline";
+    //                 disconnectBtn.style.display = "inline";
+    //                 reconnectBtn.style.display = "none";
+    //                 presentBtn.style.display = "none";
+    //             }
+    //
+    //             function showDisconnectedUI() {
+    //                 disconnectBtn.style.display = "none";
+    //                 stopBtn.style.display = "none";
+    //                 reconnectBtn.style.display = util.meta?.presId ? "inline" : "none";
+    //                 presentBtn.style.display = util.meta?.presId ? "inline" : "none";
+    //                 // reconnectBtn.style.display = localStorage["presId"] ? "inline" : "none";
+    //             }
+    //
+    //             // Monitor the connection state
+    //             connection.onconnect = () => {
+    //                 showConnectedUI();
+    //
+    //                 // Register message handler
+    //                 connection.onmessage = (message) => {
+    //                     console.log(`Received message: ${message.data}`);
+    //                 };
+    //
+    //                 // Send initial message to presentation page
+    //                 connection.send("Say hello");
+    //             };
+    //
+    //             //     if already connected, show connected UI
+    //             if (connection.state === "connected")
+    //                 connection.onconnect()
+    //
+    //             connection.onclose = () => {
+    //                 connection = null;
+    //                 showDisconnectedUI();
+    //             };
+    //
+    //             connection.onterminate = async () => {
+    //                 // Remove presId from localStorage if exists
+    //                 // delete localStorage["presId"];
+    //                 await util.setRoomMeta({ presId: null });
+    //
+    //                 connection = null;
+    //                 showDisconnectedUI();
+    //             };
+    //         }
+    //         //   connection.send('{"string": "你好，世界!", "lang": "zh-CN"}');
+    //         //   connection.send('{"string": "こんにちは、世界!", "lang": "ja"}');
+    //         //   connection.send('{"string": "안녕하세요, 세계!", "lang": "ko"}');
+    //         //   connection.send('{"string": "Hello, world!", "lang": "en-US"}');
+    //     },
     setupPlayerList: async function () {
         $("#container").append(`
         <div id="playerlist_cont">
