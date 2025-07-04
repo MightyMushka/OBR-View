@@ -1245,12 +1245,24 @@ var util = {
 
             console.log(`selected scene ${id} as screen`)
 
+            // Find the scene object
+            const sceneObj = util.meta.scenes.find((a) => a.id == id);
+            if (!sceneObj) return;
+
+            // Mimic the 'Follow' button logic for scene selection
             await util.setRoomMeta({
-                screen_el: util.meta.scenes.find((a) => a.id == id)._
-            })
+                screen_follow: true,
+                screen_el: { ...sceneObj._, player_moved: false, force_update: true }
+            });
+            await util.checkFollow();
+            setTimeout(async () => {
+                await util.setRoomMeta({ screen_follow: false, screen_el: { ...sceneObj._, player_moved: true, force_update: false } });
+                await util.checkFollow();
+                util.notify("Not following: Player view will not be updated further.", "INFO");
+            }, 2000);
 
             await util.updateScenelist()
-        //     await util.updateCurrSelectedScreenEl()
+            //     await util.updateCurrSelectedScreenEl()
 
             util.notify("Using scene", "SUCCESS")
         })
