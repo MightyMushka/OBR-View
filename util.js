@@ -157,7 +157,7 @@ var util = {
                         player_moved: true
                     }
                 });
-                await OBR.notification.show("You have broken follow mode.", "INFO");
+                await util.notify("You have broken follow mode.", "INFO"); // patched: use util.notify
             }
             lastViewport = viewport;
         });
@@ -239,7 +239,7 @@ var util = {
             // check if urlInput is valid url
             if (urlInput.value == "" || !urlInput.value.match(/http(s)?:\/\/(www\.)?owlbear\.app\/room\/.*\/.*/)) {
                 var err_str = "Please input a valid URL for the room."
-                OBR.notification.show(err_str, "ERROR")
+                util.notify(err_str, "ERROR") // patched: use util.notify
                 return
             }
 
@@ -1213,7 +1213,7 @@ var util = {
                     _
                 })
 
-                await OBR.notification.show("Item added scene", "SUCCESS")
+                await util.notify("Item added scene", "SUCCESS") // patched: use util.notify
 
                 await util.updateScenelist()
             },
