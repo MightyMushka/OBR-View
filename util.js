@@ -538,14 +538,14 @@ var util = {
                 <div style="margin-bottom:10px;">
                     <button id="toggle_follow" class="following">Follow</button>
                     <button id="refresh_pos">Refresh</button>
-                    <span style="display:inline-block;margin-left:12px;">
-                        <label style="margin-right:8px;">
-                            <input type="checkbox" id="fit_to_object" ${util.meta?.fit_to_object ? "checked" : ""}/> Fit to Object
-                        </label>
-                        <label>
-                            <input type="checkbox" id="enable_buffer" ${util.bufferEnabled ? "checked" : ""}/> Size Buffer
-                        </label>
-                    </span>
+                </div>
+                <div style="display:flex; flex-direction:row; align-items:center; gap:16px; margin-bottom:10px;">
+                    <label style="flex:1; margin:0;">
+                        <input type="checkbox" id="fit_to_object" ${util.meta?.fit_to_object ? "checked" : ""}/> Fit to Object
+                    </label>
+                    <label style="flex:1; margin:0; text-align:right;">
+                        <input type="checkbox" id="enable_buffer" ${util.bufferEnabled ? "checked" : ""}/> Size Buffer
+                    </label>
                 </div>
                 <div id="scene_control_placeholder"></div>
                 <hr>
