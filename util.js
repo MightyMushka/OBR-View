@@ -543,7 +543,7 @@ var util = {
                     <label style="flex:1; margin:0;">
                         <input type="checkbox" id="fit_to_object" ${util.meta?.fit_to_object ? "checked" : ""}/> Fit to Object
                     </label>
-                    <label style="flex:1; margin:0; text-align:right;">
+                    <label style="flex:1; margin:0; text-align:center;">
                         <input type="checkbox" id="enable_buffer" ${util.bufferEnabled ? "checked" : ""}/> Size Buffer
                     </label>
                 </div>
