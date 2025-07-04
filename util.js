@@ -528,14 +528,6 @@ var util = {
                 args: []
             });
             updatePos();
-            // --- Live viewport sync for GM outline ---
-            OBR.viewport.onChange(async (viewport) => {
-                // Only update if this player is the selected screen user
-                const playerId = await OBR.player.getId();
-                if (util.meta.screen_id && playerId == util.meta.screen_id) {
-                    await util.setRoomMeta({ player_viewport: viewport });
-                }
-            });
             return;
         }
 
@@ -1197,67 +1189,6 @@ var util = {
             args: []
         })
     },
-    // Draws a rectangle outline on the GM screen representing the current target player's viewport
-    showViewportOutline: async function () {
-        // Only GMs should see the outline
-        if (await util.isPlayer()) return;
-        // Remove any existing outline
-        $("#obr-viewport-outline").remove();
-        // Prefer player_viewport if present
-        const viewport = util.meta?.player_viewport;
-        if (viewport) {
-            // Use viewport (OBR.Viewport type: { x, y, width, height, scale })
-            const left = viewport.x;
-            const top = viewport.y;
-            const width = viewport.width;
-            const height = viewport.height;
-            const $canvas = $("#container");
-            const $outline = $("<div id='obr-viewport-outline'></div>");
-            $outline.css({
-                position: "absolute",
-                left: left + "px",
-                top: top + "px",
-                width: width + "px",
-                height: height + "px",
-                border: "3px solid #00f",
-                'box-sizing': 'border-box',
-                'pointer-events': 'none',
-                'z-index': 9999,
-                'border-radius': '8px',
-                'background': 'rgba(0,0,255,0.05)'
-            });
-            $canvas.append($outline);
-            return;
-        }
-        // Fallback to selectionBounds
-        const selectionBounds = util.meta?.screen_el?.selectionBounds;
-        if (!selectionBounds) return;
-        const dpi = await OBR.scene.grid.getDpi();
-        const minX = selectionBounds.min.x;
-        const minY = selectionBounds.min.y;
-        const maxX = selectionBounds.max.x;
-        const maxY = selectionBounds.max.y;
-        const $canvas = $("#container");
-        const left = minX;
-        const top = minY;
-        const width = maxX - minX;
-        const height = maxY - minY;
-        const $outline = $("<div id='obr-viewport-outline'></div>");
-        $outline.css({
-            position: "absolute",
-            left: left + "px",
-            top: top + "px",
-            width: width + "px",
-            height: height + "px",
-            border: "3px solid #00f",
-            'box-sizing': 'border-box',
-            'pointer-events': 'none',
-            'z-index': 9999,
-            'border-radius': '8px',
-            'background': 'rgba(0,0,255,0.05)'
-        });
-        $canvas.append($outline);
-    },
     setupScenes: async function () {
         if (typeof util.meta.scenes == "undefined")
              util.meta.scenes = []
@@ -1328,16 +1259,12 @@ var util = {
                 await util.setRoomMeta({ screen_follow: false, screen_el: { ...sceneObj._, player_moved: true, force_update: false } });
                 await util.checkFollow();
                 util.notify("Not following: Player view will not be updated further.", "INFO");
-                // Draw the viewport outline after scene selection completes
-                await util.showViewportOutline();
             }, 2000);
 
             await util.updateScenelist()
             //     await util.updateCurrSelectedScreenEl()
 
             util.notify("Using scene", "SUCCESS")
-            // Also draw the outline immediately after scene selection
-            await util.showViewportOutline();
         })
 
         // setup add to scene button
@@ -1461,8 +1388,6 @@ var util = {
                 selectionBounds: new_selection_bounds
             }
         })
-        // Draw the viewport outline for the GM
-        await util.showViewportOutline();
     },
     itemsChanged: async function (items) {
         console.log("itemsChanged")
@@ -1496,8 +1421,8 @@ var util = {
             return
         }
         // is GM
-        // If player_viewport changed, update outline
-        await util.showViewportOutline();
+
+
     },
     // tracker: async function () {
     //     console.log(arguments)
