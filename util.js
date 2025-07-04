@@ -598,7 +598,7 @@ var util = {
         `);
 
         // Move scenes UI into the placeholder (now right after fit/buffer)
-        $("#scene_control").detach().appendTo("#screen_control_placeholder");
+        $("#scene_control").detach().appendTo("#scene_control_placeholder");
         // Move player list UI into the placeholder
         $("#playerlist_cont").detach().appendTo("#playerlist_cont_placeholder");
         // Move presentation tools UI into the placeholder at the end
