@@ -1189,6 +1189,46 @@ var util = {
             args: []
         })
     },
+    // Draws a rectangle outline on the GM screen representing the current target player's viewport
+    showViewportOutline: async function () {
+        // Only GMs should see the outline
+        if (await util.isPlayer()) return;
+        // Remove any existing outline
+        $("#obr-viewport-outline").remove();
+        // Get the current selectionBounds from meta
+        const selectionBounds = util.meta?.screen_el?.selectionBounds;
+        if (!selectionBounds) return;
+        // Get DPI and convert bounds to screen coordinates
+        const dpi = await OBR.scene.grid.getDpi();
+        // Convert bounds to px (OBR units are in grid units, so multiply by dpi)
+        const minX = selectionBounds.min.x;
+        const minY = selectionBounds.min.y;
+        const maxX = selectionBounds.max.x;
+        const maxY = selectionBounds.max.y;
+        // Get the canvas or main container to overlay the outline
+        const $canvas = $("#container");
+        // Calculate position and size in px
+        const left = minX;
+        const top = minY;
+        const width = maxX - minX;
+        const height = maxY - minY;
+        // Create the outline div
+        const $outline = $("<div id='obr-viewport-outline'></div>");
+        $outline.css({
+            position: "absolute",
+            left: left + "px",
+            top: top + "px",
+            width: width + "px",
+            height: height + "px",
+            border: "3px solid #00f",
+            'box-sizing': 'border-box',
+            'pointer-events': 'none',
+            'z-index': 9999,
+            'border-radius': '8px',
+            'background': 'rgba(0,0,255,0.05)'
+        });
+        $canvas.append($outline);
+    },
     setupScenes: async function () {
         if (typeof util.meta.scenes == "undefined")
              util.meta.scenes = []
@@ -1259,12 +1299,16 @@ var util = {
                 await util.setRoomMeta({ screen_follow: false, screen_el: { ...sceneObj._, player_moved: true, force_update: false } });
                 await util.checkFollow();
                 util.notify("Not following: Player view will not be updated further.", "INFO");
+                // Draw the viewport outline after scene selection completes
+                await util.showViewportOutline();
             }, 2000);
 
             await util.updateScenelist()
             //     await util.updateCurrSelectedScreenEl()
 
             util.notify("Using scene", "SUCCESS")
+            // Also draw the outline immediately after scene selection
+            await util.showViewportOutline();
         })
 
         // setup add to scene button
@@ -1388,6 +1432,8 @@ var util = {
                 selectionBounds: new_selection_bounds
             }
         })
+        // Draw the viewport outline for the GM
+        await util.showViewportOutline();
     },
     itemsChanged: async function (items) {
         console.log("itemsChanged")
